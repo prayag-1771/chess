@@ -15,13 +15,21 @@ export const Chessboard = ({ chess, setBoard, board, socket, color }: {
 }) => {
   const [from, setFrom] = useState<Square | null>(null);
   const [to, setTo] = useState<Square | null>(null);
+  console.log(board)
+
+  const displayBoard = color === 'black' ? [...board].reverse() : board;
 
   return <div>
-    {board.map((row, i) => {
+    
+  {displayBoard.map((row, i) => {
+      const displayRow = color === 'black' ? [...row].reverse() : row;
       return <div key={i} className="flex">
-        {row.map((square, j) => {
+        {displayRow.map((square, j) => {
+          const file = color === 'black' ? 7 - j : j;
+          const rank = color === 'black' ? i + 1 : 8 - i;
+          const squareRepresentation = String.fromCharCode(97 + file) + "" + rank as Square;
+          
           return <div onClick={() => {
-            const squareRepresentation = String.fromCharCode(97 + j) + "" + (8 - i) as Square;
             if(!from && square?.color !== color?.substring(0,1)){
               console.log('Cant move this color')
               setFrom(null);
@@ -43,7 +51,7 @@ export const Chessboard = ({ chess, setBoard, board, socket, color }: {
               }))
               setFrom(null);
             }
-          }} key={j} className={`w-16 h-16 ${(i + j) % 2 == 0 ? 'bg-green-400' : 'bg-white'}`}>
+          }} key={j} className={`w-16 h-16 ${(i + j) % 2 == 0 ? 'bg-[#739552]' : 'bg-[#ebecd0]'}`}>
             <div className="flex justify-center h-full items-center">
               {square ? <img className="w-8" src={`/${square?.color == 'b' ? square.type : `${square?.type?.toUpperCase()} copy`}.png`} /> : ""}
             </div>
@@ -51,5 +59,6 @@ export const Chessboard = ({ chess, setBoard, board, socket, color }: {
         })}
       </div>
     })}
+
   </div>
 }

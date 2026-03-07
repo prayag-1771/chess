@@ -54,7 +54,7 @@ export const Game = () => {
   return <div>
     <div className="max-w-screen pt-10 flex justify-center">
       <div className="grid grid-cols-6 gap-4">
-        <div className="h-screen col-span-4">
+        <div className={`h-screen ${started? "col-span-6" : "col-span-4"}`}>
           < Chessboard chess={chess} setBoard={setBoard} board={board} socket={socket} color={color} />
         </div>
         <div className="flex justify-center items-center max-h-120 ml-15">
@@ -65,6 +65,7 @@ export const Game = () => {
           }}>
             Play
           </Button>}
+          
         </div>
       </div>
     </div>
