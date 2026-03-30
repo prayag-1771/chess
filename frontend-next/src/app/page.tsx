@@ -1,28 +1,75 @@
-import Link from "next/link"
-import Image from "next/image"
+import Link from 'next/link'
+import { HeroScene3D } from '@/components/3d/HeroScene3D'
 
 export default function Home() {
   return (
-    <div className="h-screen bg-[#302e2b]">
-      <div className="pt-16 flex justify-center">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <div className="ml-4 flex justify-center">
-            <div className="max-w-lg">
-              <Image src="/chessboard.png" alt="Chess board" width={500} height={500} />
-            </div>
+    <main className="landing-root">
+      {/* ── Hero Section ── */}
+      <section className="hero-section">
+        {/* Left: 3D Canvas */}
+        <div className="hero-canvas">
+          <HeroScene3D />
+        </div>
+
+        {/* Right: copy + CTA */}
+        <div className="hero-copy">
+          {/* Badge */}
+          <div className="hero-badge">
+            <span className="badge-dot" />
+            Live multiplayer · Real-time
           </div>
-          <div className="ml-24 pt-16">
-            <div className="flex justify-center">
-              <h1 className="text-4xl font-bold text-white">Play Chess on the #1 Site!</h1>
+
+          <h1 className="hero-heading">
+            Play Chess<br />
+            <span className="hero-heading-accent">in 3D</span>
+          </h1>
+
+          <p className="hero-subheading">
+            Experience the classic game like never before.<br />
+            Beautifully rendered, silky smooth, and always free.
+          </p>
+
+          <div className="hero-actions">
+            <Link href="/game" id="btn-play-now" className="btn-primary">
+              ▶&nbsp; Play Now
+            </Link>
+            <a href="#features" className="btn-secondary">Learn More ↓</a>
+          </div>
+
+          {/* Subtle stats row */}
+          <div className="hero-stats">
+            <div className="stat-item">
+              <span className="stat-value">3D</span>
+              <span className="stat-label">Rendered board</span>
             </div>
-            <div className="flex justify-center pt-10">
-              <Link href="/game" className="bg-[#81b64c] font-bold text-lg text-white px-10 py-2 rounded-md">
-                Play Online
-              </Link>
+            <div className="stat-divider" />
+            <div className="stat-item">
+              <span className="stat-value">Live</span>
+              <span className="stat-label">Multiplayer</span>
+            </div>
+            <div className="stat-divider" />
+            <div className="stat-item">
+              <span className="stat-value">Free</span>
+              <span className="stat-label">Always</span>
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      </section>
+
+      {/* ── Features strip ── */}
+      <section id="features" className="features-section">
+        {[
+          { icon: '♟', title: '3D Pieces', desc: 'Hand-crafted piece geometries with realistic materials and shadow casting.' },
+          { icon: '🌐', title: 'Real-time Play', desc: 'WebSocket-powered matchmaking for instant online games against real players.' },
+          { icon: '✨', title: 'Smooth Animations', desc: 'Pieces glide across the board with arc animations and hover effects.' },
+        ].map((f) => (
+          <div key={f.title} className="feature-card">
+            <div className="feature-icon">{f.icon}</div>
+            <h3 className="feature-title">{f.title}</h3>
+            <p className="feature-desc">{f.desc}</p>
+          </div>
+        ))}
+      </section>
+    </main>
   )
 }
