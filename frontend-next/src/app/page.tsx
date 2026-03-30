@@ -4,16 +4,12 @@ import { HeroScene3D } from '@/components/3d/HeroScene3D'
 export default function Home() {
   return (
     <main className="landing-root">
-      {/* ── Hero Section ── */}
       <section className="hero-section">
-        {/* Left: 3D Canvas */}
         <div className="hero-canvas">
           <HeroScene3D />
         </div>
 
-        {/* Right: copy + CTA */}
         <div className="hero-copy">
-          {/* Badge */}
           <div className="hero-badge">
             <span className="badge-dot" />
             Live multiplayer · Real-time
@@ -36,7 +32,6 @@ export default function Home() {
             <a href="#features" className="btn-secondary">Learn More ↓</a>
           </div>
 
-          {/* Subtle stats row */}
           <div className="hero-stats">
             <div className="stat-item">
               <span className="stat-value">3D</span>
@@ -56,7 +51,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── Features strip ── */}
       <section id="features" className="features-section">
         {[
           { icon: '♟', title: '3D Pieces', desc: 'Hand-crafted piece geometries with realistic materials and shadow casting.' },

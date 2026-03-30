@@ -5,19 +5,15 @@ import { Canvas, useFrame } from '@react-three/fiber'
 import { Environment, Float, ContactShadows } from '@react-three/drei'
 import * as THREE from 'three'
 
-/** Slowly rotating chessboard preview for the hero */
 function HeroBoard() {
   const groupRef = useRef<THREE.Group>(null)
 
   useFrame((state) => {
     if (!groupRef.current) return
-    // Gentle auto-rotation
     groupRef.current.rotation.y = state.clock.elapsedTime * 0.18
-    // Slight bob
     groupRef.current.position.y = Math.sin(state.clock.elapsedTime * 0.5) * 0.08
   })
 
-  // Build a mini chess board (8x8 squares)
   const squares = []
   for (let row = 0; row < 8; row++) {
     for (let col = 0; col < 8; col++) {
@@ -26,33 +22,30 @@ function HeroBoard() {
     }
   }
 
-  // A few hero pieces scattered on the board
   const heroPieces: { col: number; row: number; height: number; color: string }[] = [
-    { col: 4, row: 0, height: 0.55, color: '#F0E6D3' }, // white king
-    { col: 3, row: 0, height: 0.48, color: '#F0E6D3' }, // white queen
-    { col: 0, row: 0, height: 0.38, color: '#F0E6D3' }, // white rook
-    { col: 7, row: 0, height: 0.38, color: '#F0E6D3' }, // white rook
-    { col: 1, row: 1, height: 0.28, color: '#F0E6D3' }, // white pawn
-    { col: 2, row: 1, height: 0.28, color: '#F0E6D3' },
-    { col: 5, row: 1, height: 0.28, color: '#F0E6D3' },
-    { col: 4, row: 7, height: 0.55, color: '#1C1C1C' }, // black king
-    { col: 3, row: 7, height: 0.48, color: '#1C1C1C' }, // black queen
-    { col: 0, row: 7, height: 0.38, color: '#1C1C1C' }, // black rook
-    { col: 7, row: 7, height: 0.38, color: '#1C1C1C' }, // black rook
-    { col: 1, row: 6, height: 0.28, color: '#1C1C1C' },
-    { col: 3, row: 6, height: 0.28, color: '#1C1C1C' },
-    { col: 6, row: 6, height: 0.28, color: '#1C1C1C' },
+    { col: 4, row: 0, height: 0.58, color: '#F8F4EC' },
+    { col: 3, row: 0, height: 0.50, color: '#F8F4EC' },
+    { col: 0, row: 0, height: 0.38, color: '#F8F4EC' },
+    { col: 7, row: 0, height: 0.38, color: '#F8F4EC' },
+    { col: 1, row: 1, height: 0.28, color: '#F8F4EC' },
+    { col: 2, row: 1, height: 0.28, color: '#F8F4EC' },
+    { col: 5, row: 1, height: 0.28, color: '#F8F4EC' },
+    { col: 4, row: 7, height: 0.58, color: '#111111' },
+    { col: 3, row: 7, height: 0.50, color: '#111111' },
+    { col: 0, row: 7, height: 0.38, color: '#111111' },
+    { col: 7, row: 7, height: 0.38, color: '#111111' },
+    { col: 1, row: 6, height: 0.28, color: '#111111' },
+    { col: 3, row: 6, height: 0.28, color: '#111111' },
+    { col: 6, row: 6, height: 0.28, color: '#111111' },
   ]
 
   return (
     <group ref={groupRef}>
-      {/* Board frame */}
       <mesh position={[0, -0.06, 0]} receiveShadow>
         <boxGeometry args={[8.6, 0.18, 8.6]} />
-        <meshStandardMaterial color="#3D2B1F" roughness={0.5} metalness={0.1} />
+        <meshStandardMaterial color="#2d1c12" roughness={0.4} metalness={0.2} />
       </mesh>
 
-      {/* Squares */}
       {squares.map(({ row, col, isLight }) => (
         <mesh
           key={`${row}-${col}`}
@@ -62,45 +55,41 @@ function HeroBoard() {
         >
           <planeGeometry args={[1, 1]} />
           <meshStandardMaterial
-            color={isLight ? '#E8D5B5' : '#B58863'}
-            roughness={0.75}
-            metalness={0.05}
+            color={isLight ? '#F3E5AB' : '#996515'}
+            roughness={0.65}
+            metalness={0.15}
           />
         </mesh>
       ))}
 
-      {/* Hero chess pieces (simplified cylinders + spheres) */}
       {heroPieces.map((p, i) => {
         const x = p.col - 3.5
         const z = p.row - 3.5
-        const isWhite = p.color === '#F0E6D3'
+        const isWhite = p.color === '#F8F4EC'
         return (
           <group key={i} position={[x, 0.01, z]}>
-            {/* Base */}
             <mesh castShadow position={[0, 0.04, 0]}>
-              <cylinderGeometry args={[0.32, 0.34, 0.08, 20]} />
+              <cylinderGeometry args={[0.32, 0.35, 0.08, 24]} />
               <meshStandardMaterial
                 color={p.color}
-                metalness={isWhite ? 0.08 : 0.15}
-                roughness={isWhite ? 0.35 : 0.25}
+                metalness={isWhite ? 0.12 : 0.2}
+                roughness={isWhite ? 0.3 : 0.2}
               />
             </mesh>
-            {/* Stem */}
             <mesh castShadow position={[0, p.height / 2, 0]}>
-              <cylinderGeometry args={[0.12, 0.18, p.height, 16]} />
+              <cylinderGeometry args={[0.14, 0.2, p.height, 20]} />
               <meshStandardMaterial
                 color={p.color}
-                metalness={isWhite ? 0.08 : 0.15}
-                roughness={isWhite ? 0.35 : 0.25}
+                metalness={isWhite ? 0.12 : 0.2}
+                roughness={isWhite ? 0.3 : 0.2}
               />
             </mesh>
-            {/* Head */}
             <mesh castShadow position={[0, p.height + 0.14, 0]}>
-              <sphereGeometry args={[0.16, 16, 16]} />
+              <sphereGeometry args={[0.18, 20, 20]} />
               <meshStandardMaterial
                 color={p.color}
-                metalness={isWhite ? 0.08 : 0.15}
-                roughness={isWhite ? 0.35 : 0.25}
+                metalness={isWhite ? 0.12 : 0.2}
+                roughness={isWhite ? 0.3 : 0.2}
               />
             </mesh>
           </group>
@@ -110,7 +99,6 @@ function HeroBoard() {
   )
 }
 
-/** Orbiting glow rings */
 function OrbitRings() {
   const ring1Ref = useRef<THREE.Mesh>(null)
   const ring2Ref = useRef<THREE.Mesh>(null)
@@ -118,24 +106,24 @@ function OrbitRings() {
   useFrame((state) => {
     const t = state.clock.elapsedTime
     if (ring1Ref.current) {
-      ring1Ref.current.rotation.x = Math.PI / 2.5
-      ring1Ref.current.rotation.z = t * 0.22
+      ring1Ref.current.rotation.x = Math.PI / 2.6
+      ring1Ref.current.rotation.z = t * 0.25
     }
     if (ring2Ref.current) {
-      ring2Ref.current.rotation.x = Math.PI / 3
-      ring2Ref.current.rotation.z = -t * 0.14
+      ring2Ref.current.rotation.x = Math.PI / 3.2
+      ring2Ref.current.rotation.z = -t * 0.18
     }
   })
 
   return (
     <>
       <mesh ref={ring1Ref} position={[0, 0.2, 0]}>
-        <torusGeometry args={[5.2, 0.018, 8, 80]} />
-        <meshBasicMaterial color="#C8A96E" transparent opacity={0.18} />
+        <torusGeometry args={[5.4, 0.015, 8, 100]} />
+        <meshBasicMaterial color="#D4AF37" transparent opacity={0.25} />
       </mesh>
       <mesh ref={ring2Ref} position={[0, 0.2, 0]}>
-        <torusGeometry args={[6.1, 0.012, 8, 80]} />
-        <meshBasicMaterial color="#8B6FFF" transparent opacity={0.12} />
+        <torusGeometry args={[6.4, 0.01, 8, 100]} />
+        <meshBasicMaterial color="#9b72ff" transparent opacity={0.18} />
       </mesh>
     </>
   )
@@ -146,47 +134,43 @@ export function HeroScene3D() {
     <Canvas
       shadows
       dpr={[1, 2]}
-      camera={{ position: [0, 9, 11], fov: 40, near: 0.1, far: 100 }}
+      camera={{ position: [0, 9.5, 12], fov: 42, near: 0.1, far: 100 }}
       gl={{
         antialias: true,
         toneMapping: THREE.ACESFilmicToneMapping,
-        toneMappingExposure: 1.15,
+        toneMappingExposure: 1.2,
         outputColorSpace: THREE.SRGBColorSpace,
       }}
       style={{ width: '100%', height: '100%', background: 'transparent' }}
     >
       <Suspense fallback={null}>
-        <Environment preset="studio" environmentIntensity={0.5} />
+        <Environment preset="studio" environmentIntensity={0.6} />
 
-        {/* Lighting */}
         <directionalLight
-          position={[6, 14, 8]}
-          intensity={2.5}
-          color="#FFF5E0"
+          position={[7, 15, 9]}
+          intensity={3}
+          color="#FFFDF5"
           castShadow
           shadow-mapSize={[1024, 1024]}
-          shadow-bias={-0.0005}
+          shadow-bias={-0.0004}
         />
-        <directionalLight position={[-5, 6, -4]} intensity={0.5} color="#B0C8E8" />
-        <ambientLight intensity={0.3} color="#FFE8C8" />
-        <pointLight position={[0, -1, 0]} intensity={1.2} color="#C8A96E" distance={12} decay={2} />
+        <directionalLight position={[-6, 7, -5]} intensity={0.6} color="#A8C4E8" />
+        <ambientLight intensity={0.4} color="#FFF2DB" />
+        <pointLight position={[0, -1, 0]} intensity={1.5} color="#D4AF37" distance={15} decay={2} />
 
-        {/* Floating board with animation */}
-        <Float speed={1.2} rotationIntensity={0.05} floatIntensity={0.3}>
+        <Float speed={1.1} rotationIntensity={0.06} floatIntensity={0.4}>
           <HeroBoard />
         </Float>
 
-        {/* Decorative orbit rings */}
         <OrbitRings />
 
-        {/* Shadow */}
         <ContactShadows
-          position={[0, -0.5, 0]}
-          opacity={0.4}
-          scale={18}
-          blur={3}
-          far={4}
-          color="#0A0500"
+          position={[0, -0.6, 0]}
+          opacity={0.45}
+          scale={20}
+          blur={3.5}
+          far={4.5}
+          color="#050300"
         />
       </Suspense>
     </Canvas>

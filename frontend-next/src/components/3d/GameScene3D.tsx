@@ -16,7 +16,6 @@ interface GameScene3DProps {
   onSquareClick: (square: Square) => void
 }
 
-/** Subtle ambient particles floating in the scene */
 function FloatingDust() {
   const meshRef = useRef<THREE.InstancedMesh>(null)
   const dummy = useRef(new THREE.Object3D())
@@ -59,16 +58,14 @@ function FloatingDust() {
   return (
     <instancedMesh ref={meshRef} args={[undefined, undefined, 60]}>
       <sphereGeometry args={[0.012, 4, 4]} />
-      <meshBasicMaterial color="#C8A96E" transparent opacity={0.25} />
+      <meshBasicMaterial color="#D4AF37" transparent opacity={0.3} />
     </instancedMesh>
   )
 }
 
-/** Scene lighting setup */
 function SceneLights() {
   return (
     <>
-      {/* Warm key light from top-front */}
       <directionalLight
         position={[5, 12, 8]}
         intensity={2.2}
@@ -83,26 +80,20 @@ function SceneLights() {
         shadow-camera-bottom={-10}
         shadow-bias={-0.0005}
       />
-      {/* Cool fill light from left */}
       <directionalLight position={[-6, 8, -4]} intensity={0.6} color="#B0C8E8" />
-      {/* Back rim light */}
       <directionalLight position={[0, 4, -10]} intensity={0.4} color="#E8D0FF" />
-      {/* Warm ambient */}
       <ambientLight intensity={0.35} color="#FFE8C8" />
-      {/* Floor bounce */}
       <hemisphereLight args={['#1A0A00', '#3D2B1F', 0.3]} />
-      {/* Table glow */}
       <pointLight position={[0, -2, 0]} intensity={0.8} color="#8B4513" distance={8} decay={2} />
     </>
   )
 }
 
-/** Loading fallback */
 function LoadingFallback() {
   return (
     <mesh position={[0, 0.5, 0]}>
       <boxGeometry args={[1, 1, 1]} />
-      <meshBasicMaterial color="#444" wireframe />
+      <meshBasicMaterial color="#2d2d2d" wireframe />
     </mesh>
   )
 }
@@ -115,7 +106,6 @@ export function GameScene3D({
   lastMove,
   onSquareClick,
 }: GameScene3DProps) {
-  // Camera elevation depends on player color
   const cameraY = 8
   const cameraZ = color === 'black' ? -9 : 9
 
@@ -138,16 +128,12 @@ export function GameScene3D({
       style={{ width: '100%', height: '100%', background: 'transparent' }}
     >
       <Suspense fallback={<LoadingFallback />}>
-        {/* Environment map for reflections */}
         <Environment preset="studio" environmentIntensity={0.4} />
 
-        {/* Lights */}
         <SceneLights />
 
-        {/* Floating dust particles */}
         <FloatingDust />
 
-        {/* Main board */}
         <ChessBoard3D
           board={board}
           color={color}
@@ -157,17 +143,15 @@ export function GameScene3D({
           onSquareClick={onSquareClick}
         />
 
-        {/* Soft contact shadow under board */}
         <ContactShadows
           position={[0, -0.18, 0]}
-          opacity={0.55}
-          scale={14}
-          blur={2.5}
-          far={3}
-          color="#1A0A00"
+          opacity={0.6}
+          scale={15}
+          blur={2.8}
+          far={3.5}
+          color="#0d0500"
         />
 
-        {/* Camera orbit controls */}
         <OrbitControls
           enablePan={false}
           minPolarAngle={Math.PI / 6}

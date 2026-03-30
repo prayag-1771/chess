@@ -38,7 +38,6 @@ export const Game = () => {
               setLastMove({ from: result.from as Square, to: result.to as Square })
             }
           } catch {
-            // invalid move from server
           }
           setBoard(chess.board())
           setSelectedSquare(null)
@@ -59,7 +58,6 @@ export const Game = () => {
     const piece = chess.get(square)
     const myColor = color === 'white' ? 'w' : 'b'
 
-    // If clicking own piece, select it and show legal moves
     if (piece && piece.color === myColor) {
       setSelectedSquare(square)
       const moves = chess.moves({ square, verbose: true })
@@ -67,7 +65,6 @@ export const Game = () => {
       return
     }
 
-    // If a square is already selected, try to move
     if (selectedSquare) {
       const move = { from: selectedSquare, to: square }
       try {
@@ -78,14 +75,11 @@ export const Game = () => {
           socket.send(JSON.stringify({ type: MOVE, move: { from: selectedSquare, to: square } }))
         }
       } catch {
-        // illegal move – just deselect
       }
       setSelectedSquare(null)
       setLegalMoves([])
     }
   }, [started, socket, chess, color, selectedSquare])
-
-  // ── UI helpers ─────────────────────────────────────────────────────────────
 
   const currentTurn = chess.turn() === 'w' ? 'White' : 'Black'
   const isMyTurn = color
@@ -95,7 +89,6 @@ export const Game = () => {
 
   return (
     <div className="game-root">
-      {/* ── 3D Canvas ── */}
       <div className="game-canvas-area">
         <GameScene3D
           board={board}
@@ -107,15 +100,12 @@ export const Game = () => {
         />
       </div>
 
-      {/* ── Side Panel ── */}
       <aside className="game-panel">
-        {/* Logo / title */}
         <div className="panel-logo">
           <span className="logo-icon">♟</span>
           <span className="logo-text">Chess 3D</span>
         </div>
 
-        {/* Connection state */}
         {!socket && (
           <div className="panel-status connecting">
             <span className="pulse-dot" />
@@ -123,7 +113,6 @@ export const Game = () => {
           </div>
         )}
 
-        {/* Pre-game: find match */}
         {socket && !started && (
           <div className="panel-lobby">
             <p className="lobby-title">Find a Match</p>
@@ -139,16 +128,13 @@ export const Game = () => {
           </div>
         )}
 
-        {/* In-game info */}
         {started && (
           <div className="panel-game-info">
-            {/* Player indicator */}
             <div className="player-badge">
               <span className={`piece-dot ${color === 'white' ? 'dot-white' : 'dot-black'}`} />
               <span>You play <strong>{color === 'white' ? 'White' : 'Black'}</strong></span>
             </div>
 
-            {/* Turn / check */}
             <div className={`turn-indicator ${isMyTurn ? 'your-turn' : 'their-turn'}`}>
               {inCheck
                 ? <><span className="check-icon">⚠</span> Check!</>
@@ -158,17 +144,14 @@ export const Game = () => {
               }
             </div>
 
-            {/* Subtle hint */}
             <p className="hint-text">Click a piece, then click its destination</p>
 
-            {/* Selected piece */}
             {selectedSquare && (
               <div className="selected-info">
                 Selected <strong>{selectedSquare}</strong> — {legalMoves.length} legal move{legalMoves.length !== 1 ? 's' : ''}
               </div>
             )}
 
-            {/* Camera tip */}
             <div className="camera-tip">
               <span>🖱</span> Drag to orbit · Scroll to zoom
             </div>
