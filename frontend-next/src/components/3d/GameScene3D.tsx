@@ -14,6 +14,8 @@ interface GameScene3DProps {
   legalMoves: Square[]
   lastMove: { from: Square; to: Square } | null
   onSquareClick: (square: Square) => void
+  checkSquare?: Square | null
+  isCheckmate?: boolean
 }
 
 function FloatingDust() {
@@ -105,6 +107,8 @@ export function GameScene3D({
   legalMoves,
   lastMove,
   onSquareClick,
+  checkSquare,
+  isCheckmate,
 }: GameScene3DProps) {
   const cameraY = 8
   const cameraZ = color === 'black' ? -9 : 9
@@ -141,6 +145,7 @@ export function GameScene3D({
           legalMoves={legalMoves}
           lastMove={lastMove}
           onSquareClick={onSquareClick}
+          checkSquare={checkSquare}
         />
 
         <ContactShadows
@@ -161,7 +166,55 @@ export function GameScene3D({
           target={[0, 0, 0]}
           makeDefault
         />
+
+        <CameraAnimations 
+          isCheck={!!checkSquare} 
+          isCheckmate={!!isCheckmate} 
+          baseZ={cameraZ} 
+          baseY={cameraY} 
+        />
       </Suspense>
     </Canvas>
   )
 }
+
+function CameraAnimations({ isCheck, isCheckmate, baseZ, baseY }: { isCheck: boolean, isCheckmate: boolean, baseZ: number, baseY: number }) {
+  useFrame((state) => {
+    // Zoom and Slow-Mo on checkmate
+    if (isCheckmate) {
+      const targetZ = baseZ * 0.6
+      const targetY = baseY * 0.5
+      state.camera.position.z = THREE.MathUtils.lerp(state.camera.position.z, targetZ, 0.02)
+      state.camera.position.y = THREE.MathUtils.lerp(state.camera.position.y, targetY, 0.02)
+      // We don't change 'makeDefault' OrbitControls target here because they fight 
+      // but simple lerp creates a nice dramatic slow zoom if OrbitControls isn't actively panning.
+      state.camera.lookAt(0, 0, 0)
+    } 
+    // Camera shake on check
+    else if (isCheck) {
+      if (!CameraAnimations.checkHandled) {
+        CameraAnimations.shakeTime = 0.5 // duration of shake
+        CameraAnimations.checkHandled = true
+      }
+    } else {
+      CameraAnimations.checkHandled = false
+    }
+
+    if (CameraAnimations.shakeTime > 0) {
+      const shakeAmount = CameraAnimations.shakeTime * 0.5
+      state.camera.position.x = (Math.random() - 0.5) * shakeAmount
+      state.camera.position.y = baseY + (Math.random() - 0.5) * shakeAmount
+      state.camera.position.z = baseZ + (Math.random() - 0.5) * shakeAmount
+      CameraAnimations.shakeTime -= 0.016
+    } else if (!isCheckmate) {
+      // gently return to base if not checkmate
+      state.camera.position.x = THREE.MathUtils.lerp(state.camera.position.x, 0, 0.1)
+      state.camera.position.y = THREE.MathUtils.lerp(state.camera.position.y, baseY, 0.1)
+      state.camera.position.z = THREE.MathUtils.lerp(state.camera.position.z, baseZ, 0.1)
+    }
+  })
+
+  return null
+}
+CameraAnimations.checkHandled = false
+CameraAnimations.shakeTime = 0

@@ -270,6 +270,20 @@ export const Game = () => {
     ? (color === 'white' && chess.turn() === 'w') || (color === 'black' && chess.turn() === 'b')
     : false
   const inCheck = chess.inCheck()
+  const isCheckmate = chess.isGameOver() && chess.isCheckmate()
+
+  const getKingSquare = (c: 'w' | 'b'): Square | null => {
+    for (let i = 0; i < 8; i++) {
+      for (let j = 0; j < 8; j++) {
+        const sq = (String.fromCharCode(97 + j) + (8 - i)) as Square
+        const p = chess.get(sq)
+        if (p && p.type === 'k' && p.color === c) return sq
+      }
+    }
+    return null
+  }
+  
+  const checkSquare = inCheck ? getKingSquare(chess.turn()) : null
 
   return (
     <div className="game-root">
@@ -281,6 +295,8 @@ export const Game = () => {
           legalMoves={legalMoves}
           lastMove={lastMove}
           onSquareClick={handleSquareClick}
+          checkSquare={checkSquare}
+          isCheckmate={isCheckmate}
         />
       </div>
 

@@ -27,6 +27,7 @@ interface ChessBoard3DProps {
   legalMoves: Square[]
   lastMove: { from: Square; to: Square } | null
   onSquareClick: (square: Square) => void
+  checkSquare?: Square | null
 }
 
 function squareToWorld(col: number, row: number): [number, number, number] {
@@ -72,6 +73,7 @@ function BoardSquares({ board, selectedSquare, legalMoves, lastMove, onSquareCli
   legalMoves: Square[]
   lastMove: { from: Square; to: Square } | null
   onSquareClick: (square: Square) => void
+  checkSquare?: Square | null
 }) {
   const squares = useMemo(() => {
     const result: { col: number; row: number; isLight: boolean; squareName: Square }[] = []
@@ -132,10 +134,42 @@ function BoardSquares({ board, selectedSquare, legalMoves, lastMove, onSquareCli
                 />
               </mesh>
             )}
+
+            {checkSquare === squareName && (
+              <CheckSquarePulse x={x} z={z} />
+            )}
           </group>
         )
       })}
     </group>
+  )
+}
+
+import { useFrame } from '@react-three/fiber'
+
+function CheckSquarePulse({ x, z }: { x: number; z: number }) {
+  const materialRef = useRef<THREE.MeshStandardMaterial>(null)
+  
+  useFrame(({ clock }) => {
+    if (materialRef.current) {
+      const pulse = (Math.sin(clock.elapsedTime * 8) + 1) / 2
+      materialRef.current.opacity = 0.4 + pulse * 0.4
+    }
+  })
+
+  return (
+    <mesh position={[x, 0.005, z]} rotation={[-Math.PI / 2, 0, 0]}>
+      <planeGeometry args={[1, 1]} />
+      <meshStandardMaterial
+        ref={materialRef}
+        color="#ff0000"
+        transparent
+        opacity={0.8}
+        emissive="#ff0000"
+        emissiveIntensity={0.8}
+        roughness={0.2}
+      />
+    </mesh>
   )
 }
 
@@ -149,7 +183,15 @@ interface PieceTracker {
   prevRow: number
 }
 
-export function ChessBoard3D({ board, color, selectedSquare, legalMoves, lastMove, onSquareClick }: ChessBoard3DProps) {
+export function ChessBoard3D({ 
+  board, 
+  color, 
+  selectedSquare, 
+  legalMoves, 
+  lastMove, 
+  onSquareClick, 
+  checkSquare 
+}: ChessBoard3DProps) {
   const groupRef = useRef<THREE.Group>(null)
 
   const pieces = useMemo(() => {
@@ -200,6 +242,7 @@ export function ChessBoard3D({ board, color, selectedSquare, legalMoves, lastMov
         legalMoves={legalMoves}
         lastMove={lastMove}
         onSquareClick={onSquareClick}
+        checkSquare={checkSquare}
       />
 
       {pieces.map((piece) => {
