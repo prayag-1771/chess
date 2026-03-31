@@ -67,7 +67,14 @@ function getSquareColor(
   return isLight ? LIGHT_SQUARE : DARK_SQUARE
 }
 
-function BoardSquares({ board, selectedSquare, legalMoves, lastMove, onSquareClick }: {
+function BoardSquares({ 
+  board, 
+  selectedSquare, 
+  legalMoves, 
+  lastMove, 
+  onSquareClick, 
+  checkSquare 
+}: {
   board: (BoardSquare | null)[][]
   selectedSquare: Square | null
   legalMoves: Square[]
