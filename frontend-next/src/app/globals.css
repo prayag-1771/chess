@@ -522,6 +522,99 @@ img, canvas { display: block; }
   color: var(--clr-text-dim);
 }
 
+.searching-spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid rgba(212,175,55,0.2);
+  border-top-color: var(--clr-gold);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 10px auto;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.game-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 5px;
+}
+
+.btn-action {
+  flex: 1;
+  padding: 10px 0;
+  border-radius: var(--r-sm);
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: all 0.2s var(--ease);
+  color: #fff;
+}
+
+.btn-draw {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.btn-draw:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.btn-resign {
+  background: rgba(255, 76, 76, 0.1);
+  border: 1px solid rgba(255, 76, 76, 0.3);
+  color: #ff6b6b;
+}
+.btn-resign:hover {
+  background: rgba(255, 76, 76, 0.2);
+}
+
+.draw-offer-bar {
+  padding: 12px 16px;
+  background: rgba(212,175,55,0.1);
+  border: 1px solid rgba(212,175,55,0.3);
+  border-radius: var(--r-md);
+  text-align: center;
+}
+
+.draw-offer-bar p {
+  font-size: 0.9rem;
+  color: var(--clr-gold);
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.draw-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.draw-buttons button {
+  flex: 1;
+  padding: 8px 0;
+  border-radius: var(--r-sm);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.btn-accept {
+  background: rgba(129,182,76,0.2);
+  color: #a8df65;
+  border: 1px solid rgba(129,182,76,0.4);
+}
+.btn-accept:hover {
+  background: rgba(129,182,76,0.3);
+}
+
+.btn-decline {
+  background: rgba(255,76,76,0.1);
+  color: #ff6b6b;
+  border: 1px solid rgba(255,76,76,0.3);
+}
+.btn-decline:hover {
+  background: rgba(255,76,76,0.2);
+}
+
 @media (max-width: 1024px) {
   .hero-section {
     grid-template-columns: 1fr;
