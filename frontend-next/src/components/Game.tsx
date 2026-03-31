@@ -330,6 +330,25 @@ export const Game = () => {
               </button>
             </div>
 
+            {/* Move History Panel */}
+            <div className="move-history-panel">
+              <h4 className="move-history-title">Move History</h4>
+              <div className="move-history-list">
+                {chess.history().reduce((result, value, index, array) => {
+                  if (index % 2 === 0) {
+                    result.push(array.slice(index, index + 2));
+                  }
+                  return result;
+                }, [] as string[][]).map((pair, i) => (
+                  <div key={i} className="move-row">
+                    <span className="move-number">{i + 1}.</span>
+                    <span className="move-white">{pair[0]}</span>
+                    <span className="move-black">{pair[1] || ''}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             <div className="camera-tip">
               <span>🖱</span> Drag to orbit · Scroll to zoom
             </div>

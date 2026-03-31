@@ -615,6 +615,63 @@ img, canvas { display: block; }
   background: rgba(255,76,76,0.2);
 }
 
+.move-history-panel {
+  display: flex;
+  flex-direction: column;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: var(--r-md);
+  max-height: 180px;
+  overflow: hidden;
+  margin-top: 5px;
+}
+
+.move-history-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: var(--clr-text-dim);
+}
+
+.move-history-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.move-row {
+  display: grid;
+  grid-template-columns: 40px 1fr 1fr;
+  padding: 4px 12px;
+  font-size: 0.85rem;
+  font-family: monospace;
+}
+
+.move-row:nth-child(even) {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.move-number {
+  color: var(--clr-text-dim);
+  font-weight: 600;
+}
+
+.move-white {
+  color: var(--clr-text);
+  font-weight: 500;
+}
+
+.move-black {
+  color: var(--clr-text-sub);
+  font-weight: 500;
+}
+
 @media (max-width: 1024px) {
   .hero-section {
     grid-template-columns: 1fr;
