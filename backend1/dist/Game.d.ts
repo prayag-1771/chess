@@ -2,7 +2,7 @@ import { WebSocket } from "ws";
 import { Chess } from "chess.js";
 export type GameResult = {
     winner: "white" | "black" | "draw";
-    reason: "checkmate" | "stalemate" | "insufficient_material" | "threefold_repetition" | "fifty_move_rule" | "draw_agreement" | "resignation" | "disconnect";
+    reason: "checkmate" | "stalemate" | "insufficient_material" | "threefold_repetition" | "fifty_move_rule" | "draw_agreement" | "resignation" | "disconnect" | "timeout";
 };
 export declare class Game {
     readonly id: string;
@@ -12,7 +12,16 @@ export declare class Game {
     startTime: Date;
     isOver: boolean;
     private drawOfferedBy;
-    constructor(player1: WebSocket, player2: WebSocket);
+    timeLeftMs: {
+        white: number;
+        black: number;
+    };
+    private lastMoveTime;
+    private incrementMs;
+    private timer;
+    private hasStarted;
+    constructor(player1: WebSocket, player2: WebSocket, timeControl: string);
+    private checkTime;
     private safeSend;
     private getOpponent;
     private getColor;

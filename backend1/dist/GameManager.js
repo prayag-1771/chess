@@ -123,7 +123,7 @@ class GameManager {
             }
             switch (message.type) {
                 case messages_1.INIT_GAME:
-                    this.handleInitGame(socket);
+                    this.handleInitGame(socket, message);
                     break;
                 case messages_1.MOVE:
                     this.handleMove(socket, message);
@@ -148,7 +148,8 @@ class GameManager {
             }
         });
     }
-    handleInitGame(socket) {
+    pendingUsers = new Map();
+    handleInitGame(socket, message) {
         if (this.socketToGame.has(socket)) {
             this.safeSend(socket, {
                 type: messages_1.ERROR,
@@ -156,29 +157,41 @@ class GameManager {
             });
             return;
         }
-        if (this.pendingUser === socket) {
+        // Default to 10+0 if not provided
+        const payload = message?.payload || {};
+        const timeControl = payload.timeControl || "10+0";
+        if (!["3+2", "5+0", "10+0"].includes(timeControl)) {
+            this.safeSend(socket, {
+                type: messages_1.ERROR,
+                payload: { message: "Invalid time control" },
+            });
+            return;
+        }
+        const pendingUser = this.pendingUsers.get(timeControl);
+        if (pendingUser === socket) {
             this.safeSend(socket, {
                 type: messages_1.WAITING,
                 payload: { message: "Already waiting for an opponent" },
             });
             return;
         }
-        if (this.pendingUser && this.pendingUser.readyState !== ws_1.WebSocket.OPEN) {
-            this.pendingUser = null;
+        if (pendingUser && pendingUser.readyState !== ws_1.WebSocket.OPEN) {
+            this.pendingUsers.delete(timeControl);
         }
-        if (this.pendingUser && this.pendingUser !== socket) {
-            const game = new Game_1.Game(this.pendingUser, socket);
+        const validPendingUser = this.pendingUsers.get(timeControl);
+        if (validPendingUser && validPendingUser !== socket) {
+            const game = new Game_1.Game(validPendingUser, socket, timeControl);
             this.games.push(game);
-            this.socketToGame.set(this.pendingUser, game);
+            this.socketToGame.set(validPendingUser, game);
             this.socketToGame.set(socket, game);
-            this.pendingUser = null;
+            this.pendingUsers.delete(timeControl);
             console.log(`${this.games.length} active game(s)`);
         }
         else {
-            this.pendingUser = socket;
+            this.pendingUsers.set(timeControl, socket);
             this.safeSend(socket, {
                 type: messages_1.WAITING,
-                payload: { message: "Waiting for an opponent..." },
+                payload: { message: `Waiting for an opponent in ${timeControl}...` },
             });
         }
     }
