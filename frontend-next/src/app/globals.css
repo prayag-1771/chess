@@ -888,6 +888,29 @@ img, canvas { display: block; }
   width: 100%;
 }
 
+.replay-controls .btn-action {
+  flex: 1;
+  padding: 8px 0;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--clr-text);
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.replay-controls .btn-action:hover {
+  background: rgba(212, 175, 55, 0.15);
+  border-color: rgba(212, 175, 55, 0.4);
+}
+
+.active-move {
+  background: rgba(212, 175, 55, 0.25);
+  color: #fff !important;
+  font-weight: 700;
+  border-radius: 4px;
+  padding: 0 4px;
+}
+
 @media (max-width: 1024px) {
   .hero-section {
     grid-template-columns: 1fr;

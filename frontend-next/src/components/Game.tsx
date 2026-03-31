@@ -6,7 +6,7 @@ import {
   RESIGN, DRAW_OFFER, DRAW_ACCEPT, DRAW_DECLINE,
   OPPONENT_DISCONNECTED, WAITING, INVALID_MOVE
 } from '../messages'
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { Chess } from 'chess.js'
 import type { Square, Move } from 'chess.js'
 import { GameScene3D } from './3d/GameScene3D'
@@ -35,6 +35,8 @@ export const Game = () => {
   const [confirmModal, setConfirmModal] = useState<'resign' | 'draw' | null>(null)
   const [roomIdInput, setRoomIdInput] = useState('')
   const [roomUrl, setRoomUrl] = useState('')
+  const [reviewMode, setReviewMode] = useState(false)
+  const [replayIndex, setReplayIndex] = useState<number>(0)
   
   const socket = useSocket()
   const playSound = useSound()
@@ -111,6 +113,8 @@ export const Game = () => {
           const result = message.payload as GameOverResult
           setGameResult(result)
           setStarted(false)
+          setReviewMode(false)
+          setReplayIndex(chess.history().length)
 
           if (result.winner === 'draw') {
             setStatus(`Draw — ${formatReason(result.reason)}`)
@@ -120,6 +124,7 @@ export const Game = () => {
           playSound('gameOver')
           break
         }
+
 
         case OPPONENT_DISCONNECTED:
           if (started) {
@@ -339,7 +344,28 @@ export const Game = () => {
     setGameResult(null)
     setDrawOffered(false)
     setColor(null)
+    setReviewMode(false)
   }, [chess])
+
+  const displayBoard = useMemo(() => {
+    if (!reviewMode || replayIndex === chess.history().length) {
+      return board
+    }
+    const tempChess = new Chess()
+    const history = chess.history({ verbose: true })
+    for(let i = 0; i < replayIndex; i++) {
+      tempChess.move(history[i])
+    }
+    return tempChess.board()
+  }, [board, replayIndex, chess, reviewMode])
+
+  const displayLastMove = useMemo(() => {
+    if (!reviewMode || replayIndex === chess.history().length) return lastMove
+    if (replayIndex === 0) return null
+    const history = chess.history({ verbose: true })
+    const turn = history[replayIndex - 1]
+    return { from: turn.from as Square, to: turn.to as Square }
+  }, [lastMove, replayIndex, chess, reviewMode])
 
   const currentTurn = chess.turn() === 'w' ? 'White' : 'Black'
   const isMyTurn = color
@@ -365,12 +391,12 @@ export const Game = () => {
     <div className="game-root">
       <div className="game-canvas-area">
         <GameScene3D
-          board={board}
+          board={displayBoard}
           color={color}
-          selectedSquare={selectedSquare}
-          legalMoves={legalMoves}
-          lastMove={lastMove}
-          onSquareClick={handleSquareClick}
+          selectedSquare={reviewMode ? null : selectedSquare}
+          legalMoves={reviewMode ? [] : legalMoves}
+          lastMove={displayLastMove}
+          onSquareClick={reviewMode ? () => {} : handleSquareClick}
           checkSquare={checkSquare}
           isCheckmate={isCheckmate}
         />
@@ -429,7 +455,7 @@ export const Game = () => {
           </div>
         )}
 
-        {socket && !started && (
+        {socket && !started && !reviewMode && (
           <div className="panel-lobby">
             {gameResult ? (
               <>
@@ -441,16 +467,25 @@ export const Game = () => {
                     : '😞 You Lost'}
                 </p>
                 <p className="lobby-sub">{formatReason(gameResult.reason)}</p>
-                <button
-                  id="btn-play-again"
-                  className="btn-play"
-                  onClick={() => {
-                    handlePlayAgain()
-                    socket.send(JSON.stringify({ type: INIT_GAME, payload: { timeControl } }))
-                  }}
-                >
-                  <span>🔄</span> Play Again
-                </button>
+                <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
+                  <button
+                    id="btn-play-again"
+                    className="btn-play"
+                    onClick={() => {
+                      handlePlayAgain()
+                      socket.send(JSON.stringify({ type: INIT_GAME, payload: { timeControl } }))
+                    }}
+                  >
+                    <span>🔄</span> Play
+                  </button>
+                  <button 
+                    className="btn-play" 
+                    style={{ background: 'var(--clr-surface)' }} 
+                    onClick={() => setReviewMode(true)}
+                  >
+                    <span>🔍</span> Review
+                  </button>
+                </div>
               </>
             ) : waitingForOpponent ? (
               <>
@@ -563,7 +598,7 @@ export const Game = () => {
             )}
 
             {/* Draw offer received */}
-            {drawOffered && (
+            {drawOffered && !reviewMode && (
               <div className="draw-offer-bar">
                 <p>Opponent offers a draw</p>
                 <div className="draw-buttons">
@@ -573,15 +608,37 @@ export const Game = () => {
               </div>
             )}
 
-            {/* Action buttons */}
-            <div className="game-actions">
-              <button className="btn-action btn-draw" onClick={() => setConfirmModal('draw')} title="Offer Draw">
-                🤝 Draw
-              </button>
-              <button className="btn-action btn-resign" onClick={() => setConfirmModal('resign')} title="Resign">
-                🏳️ Resign
-              </button>
-            </div>
+            {/* Action buttons or Replay UI */}
+            {!reviewMode ? (
+              <div className="game-actions">
+                <button className="btn-action btn-draw" onClick={() => setConfirmModal('draw')} title="Offer Draw">
+                  🤝 Draw
+                </button>
+                <button className="btn-action btn-resign" onClick={() => setConfirmModal('resign')} title="Resign">
+                  🏳️ Resign
+                </button>
+              </div>
+            ) : (
+              <div className="replay-controls" style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
+                <div style={{ display: 'flex', gap: '4px' }}>
+                  <button className="btn-action" onClick={() => setReplayIndex(0)}>|&lt;</button>
+                  <button className="btn-action" onClick={() => setReplayIndex(i => Math.max(0, i - 1))}>&lt;</button>
+                  <button className="btn-action" onClick={() => setReplayIndex(i => Math.min(chess.history().length, i + 1))}>&gt;</button>
+                  <button className="btn-action" onClick={() => setReplayIndex(chess.history().length)}>&gt;|</button>
+                </div>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button className="btn-action" onClick={() => {
+                    const blob = new Blob([chess.pgn()], { type: "text/plain;charset=utf-8" })
+                    const url = URL.createObjectURL(blob)
+                    const a = document.createElement('a')
+                    a.href = url
+                    a.download = "game.pgn"
+                    a.click()
+                  }}>📥 PGN</button>
+                  <button className="btn-action" onClick={() => setReviewMode(false)}>Exit Review</button>
+                </div>
+              </div>
+            )}
 
             {/* Move History Panel */}
             <div className="move-history-panel">
@@ -595,8 +652,8 @@ export const Game = () => {
                 }, [] as string[][]).map((pair, i) => (
                   <div key={i} className="move-row">
                     <span className="move-number">{i + 1}.</span>
-                    <span className="move-white">{pair[0]}</span>
-                    <span className="move-black">{pair[1] || ''}</span>
+                    <span className={`move-white ${reviewMode && replayIndex === i * 2 + 1 ? 'active-move' : ''}`}>{pair[0]}</span>
+                    <span className={`move-black ${reviewMode && replayIndex === i * 2 + 2 ? 'active-move' : ''}`}>{pair[1] || ''}</span>
                   </div>
                 ))}
               </div>
