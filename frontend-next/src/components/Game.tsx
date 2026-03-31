@@ -555,7 +555,7 @@ export const Game = () => {
           </div>
         )}
 
-        {started && (
+        {(started || reviewMode) && (
           <div className="panel-game-info">
             <div className="player-badge">
               <span className={`piece-dot ${color === 'white' ? 'dot-white' : 'dot-black'}`} />

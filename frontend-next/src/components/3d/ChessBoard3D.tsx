@@ -124,9 +124,8 @@ function BoardSquares({
                 <meshBasicMaterial
                   color={LEGAL_MOVE_COLOR}
                   transparent
-                  opacity={0.8}
+                  opacity={0.3}
                 />
-                <pointLight intensity={0.5} distance={1} color={LEGAL_MOVE_COLOR} position={[0,0,0.1]} />
               </mesh>
             )}
 
@@ -136,9 +135,8 @@ function BoardSquares({
                 <meshBasicMaterial
                   color={LEGAL_CAPTURE_COLOR}
                   transparent
-                  opacity={0.8}
+                  opacity={0.4}
                 />
-                <pointLight intensity={1} distance={1.5} color={LEGAL_CAPTURE_COLOR} position={[0,0,0.1]} />
               </mesh>
             )}
 
