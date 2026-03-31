@@ -1,3 +1,12 @@
 export declare const INIT_GAME = "init_game";
 export declare const MOVE = "move";
 export declare const GAME_OVER = "game_over";
+export declare const RESIGN = "resign";
+export declare const DRAW_OFFER = "draw_offer";
+export declare const DRAW_ACCEPT = "draw_accept";
+export declare const DRAW_DECLINE = "draw_decline";
+export declare const REMATCH = "rematch";
+export declare const ERROR = "error";
+export declare const OPPONENT_DISCONNECTED = "opponent_disconnected";
+export declare const WAITING = "waiting";
+export declare const INVALID_MOVE = "invalid_move";

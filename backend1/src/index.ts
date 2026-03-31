@@ -1,13 +1,38 @@
-import { WebSocketServer } from 'ws';
-import { GameManager } from './GameManager';
+import { WebSocketServer } from "ws";
+import { GameManager } from "./GameManager";
 
-const wss = new WebSocketServer({ port: 8080 });
+const PORT = parseInt(process.env["PORT"] || "8080", 10);
 
-
+const wss = new WebSocketServer({ port: PORT });
 const gameManager = new GameManager();
 
-wss.on('connection', function connection(ws) {
-  gameManager.addUser(ws)
-  
-  ws.on('close', () => gameManager.removeUser(ws))
-})
+console.log(`♟ Chess WebSocket server listening on port ${PORT}`);
+
+wss.on("connection", (ws, req) => {
+  const origin = req.headers.origin || "unknown";
+  console.log(`New connection from ${origin}`);
+
+  gameManager.addUser(ws);
+
+  ws.on("close", () => {
+    console.log(`Connection closed (origin: ${origin})`);
+    gameManager.removeUser(ws);
+  });
+
+  ws.on("error", (err) => {
+    console.error(`WebSocket error: ${err.message}`);
+    gameManager.removeUser(ws);
+  });
+});
+
+wss.on("error", (err) => {
+  console.error(`Server error: ${err.message}`);
+});
+
+// Graceful shutdown
+process.on("SIGINT", () => {
+  console.log("\nShutting down...");
+  wss.close(() => {
+    process.exit(0);
+  });
+});
