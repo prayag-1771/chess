@@ -145,6 +145,72 @@ function BoardSquares({ board, selectedSquare, legalMoves, lastMove, onSquareCli
   )
 }
 
+const INITIAL_PIECES: Record<PieceSymbol, number> = { k: 1, q: 1, r: 2, b: 2, n: 2, p: 8 }
+
+function CapturedTray({ board }: { board: (BoardSquare | null)[][] }) {
+  const captured = useMemo(() => {
+    const counts = {
+      w: { k: 0, q: 0, r: 0, b: 0, n: 0, p: 0 },
+      b: { k: 0, q: 0, r: 0, b: 0, n: 0, p: 0 }
+    }
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        const p = board[r]?.[c]
+        if (p) counts[p.color][p.type]++
+      }
+    }
+    const missingW: PieceSymbol[] = []
+    const missingB: PieceSymbol[] = []
+    const order: PieceSymbol[] = ['q', 'r', 'b', 'n', 'p']
+    
+    order.forEach(type => {
+      const mWhite = INITIAL_PIECES[type] - counts.w[type]
+      for (let i = 0; i < mWhite; i++) missingW.push(type)
+      
+      const mBlack = INITIAL_PIECES[type] - counts.b[type]
+      for (let i = 0; i < mBlack; i++) missingB.push(type)
+    })
+    
+    return { missingW, missingB }
+  }, [board])
+
+  const spacing = 0.5
+  
+  return (
+    <group>
+      {/* Black pieces captured by White (Missing Black) -> Place near White's side (Z ≈ +4.5) */}
+      <group position={[4.5, 0, 4.2]} rotation={[0, -Math.PI / 2, 0]}>
+        {captured.missingB.map((type, i) => (
+          <ChessPiece
+            key={`cap-w-${i}`}
+            type={type}
+            pieceColor="b"
+            position={[i * spacing, 0, 0]}
+            targetPosition={[i * spacing, 0, 0]}
+            selected={false}
+            onClick={() => {}}
+          />
+        ))}
+      </group>
+
+      {/* White pieces captured by Black (Missing White) -> Place near Black's side (Z ≈ -4.5) */}
+      <group position={[-4.5, 0, -4.2]} rotation={[0, Math.PI / 2, 0]}>
+        {captured.missingW.map((type, i) => (
+          <ChessPiece
+            key={`cap-b-${i}`}
+            type={type}
+            pieceColor="w"
+            position={[i * spacing, 0, 0]}
+            targetPosition={[i * spacing, 0, 0]}
+            selected={false}
+            onClick={() => {}}
+          />
+        ))}
+      </group>
+    </group>
+  )
+}
+
 import { useFrame } from '@react-three/fiber'
 
 function CheckSquarePulse({ x, z }: { x: number; z: number }) {
@@ -265,6 +331,8 @@ export function ChessBoard3D({
           />
         )
       })}
+      
+      <CapturedTray board={board} />
     </group>
   )
 }
