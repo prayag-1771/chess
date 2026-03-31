@@ -16,6 +16,7 @@ export declare class GameManager {
     private safeSend;
     private addHandler;
     private pendingUsers;
+    private privateRooms;
     private handleInitGame;
     private handleMove;
     private handleResign;

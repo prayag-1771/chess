@@ -77,6 +77,14 @@ class GameManager {
         if (this.pendingUser === socket) {
             this.pendingUser = null;
         }
+        for (const [timeControl, w] of this.pendingUsers.entries()) {
+            if (w === socket)
+                this.pendingUsers.delete(timeControl);
+        }
+        for (const [roomId, w] of this.privateRooms.entries()) {
+            if (w === socket)
+                this.privateRooms.delete(roomId);
+        }
         const game = this.socketToGame.get(socket);
         if (game) {
             game.handleDisconnect(socket);
@@ -149,6 +157,7 @@ class GameManager {
         });
     }
     pendingUsers = new Map();
+    privateRooms = new Map();
     handleInitGame(socket, message) {
         if (this.socketToGame.has(socket)) {
             this.safeSend(socket, {
@@ -165,6 +174,28 @@ class GameManager {
                 type: messages_1.ERROR,
                 payload: { message: "Invalid time control" },
             });
+            return;
+        }
+        const roomId = payload.roomId;
+        if (roomId) {
+            if (typeof roomId !== 'string' || roomId.length > 30) {
+                this.safeSend(socket, { type: messages_1.ERROR, payload: { message: "Invalid room ID" } });
+                return;
+            }
+            const waitingUser = this.privateRooms.get(roomId);
+            if (waitingUser && waitingUser !== socket) {
+                this.privateRooms.delete(roomId);
+                const game = new Game_1.Game(waitingUser, socket, timeControl);
+                this.games.push(game);
+                this.socketToGame.set(waitingUser, game);
+                this.socketToGame.set(socket, game);
+                console.log(`[GameManager] Private Room Game started! Room: ${roomId}`);
+            }
+            else {
+                this.privateRooms.set(roomId, socket);
+                this.safeSend(socket, { type: messages_1.WAITING, payload: { message: "Waiting for opponent to join room..." } });
+                console.log(`[GameManager] User created/joined private room: ${roomId}`);
+            }
             return;
         }
         const pendingUser = this.pendingUsers.get(timeControl);
