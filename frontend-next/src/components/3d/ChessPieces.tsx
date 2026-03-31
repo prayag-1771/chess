@@ -4,100 +4,101 @@ import { useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { useFrame } from '@react-three/fiber'
 
-const LATHE_SEGMENTS = 32
+const LATHE_SEGMENTS = 48
 
 function lathe(profile: [number, number][]): THREE.LatheGeometry {
   const points = profile.map(([r, h]) => new THREE.Vector2(r, h))
-  return new THREE.LatheGeometry(points, LATHE_SEGMENTS)
+  const geo = new THREE.LatheGeometry(points, LATHE_SEGMENTS)
+  geo.computeVertexNormals()
+  return geo
 }
 
 function pawnGeometry(): THREE.BufferGeometry {
   return lathe([
-    [0, 0], [0.34, 0], [0.34, 0.05], [0.29, 0.09], [0.17, 0.14],
-    [0.14, 0.20], [0.12, 0.34], [0.11, 0.46],
-    [0.15, 0.50], [0.16, 0.53], [0.15, 0.56], [0.11, 0.60],
-    [0.15, 0.66], [0.18, 0.74], [0.18, 0.82], [0.15, 0.88],
-    [0.09, 0.93], [0, 0.96],
+    [0, 0], [0.36, 0], [0.36, 0.04], [0.32, 0.07], [0.20, 0.12],
+    [0.16, 0.18], [0.14, 0.28], [0.13, 0.38], [0.12, 0.46],
+    [0.16, 0.50], [0.17, 0.52], [0.16, 0.55], [0.12, 0.58],
+    [0.15, 0.64], [0.19, 0.72], [0.20, 0.80], [0.18, 0.86],
+    [0.14, 0.91], [0.08, 0.95], [0, 0.98],
   ])
 }
 
 function rookGeometry(): THREE.BufferGeometry {
   return lathe([
-    [0, 0], [0.36, 0], [0.36, 0.06], [0.31, 0.10], [0.19, 0.15],
-    [0.16, 0.22], [0.14, 0.45], [0.13, 0.62],
-    [0.17, 0.65], [0.24, 0.68], [0.26, 0.72], [0.26, 0.90],
-    [0.20, 0.90], [0.20, 0.84], [0.23, 0.84], [0.23, 0.76],
-    [0.10, 0.76], [0.10, 0.90], [0, 0.90],
+    [0, 0], [0.38, 0], [0.38, 0.05], [0.33, 0.09], [0.20, 0.14],
+    [0.17, 0.20], [0.15, 0.40], [0.14, 0.56], [0.13, 0.65],
+    [0.18, 0.68], [0.25, 0.71], [0.27, 0.74], [0.27, 0.92],
+    [0.21, 0.92], [0.21, 0.86], [0.24, 0.86], [0.24, 0.78],
+    [0.11, 0.78], [0.11, 0.92], [0, 0.92],
   ])
 }
 
 function knightBaseGeometry(): THREE.LatheGeometry {
   return lathe([
-    [0, 0], [0.36, 0], [0.36, 0.06], [0.31, 0.10], [0.19, 0.15],
-    [0.16, 0.22], [0.15, 0.35], [0.14, 0.42], [0, 0.42],
+    [0, 0], [0.38, 0], [0.38, 0.05], [0.33, 0.09], [0.20, 0.14],
+    [0.17, 0.20], [0.16, 0.32], [0.15, 0.42], [0, 0.42],
   ])
 }
 
 function knightHeadShape(): THREE.ExtrudeGeometry {
   const shape = new THREE.Shape()
   shape.moveTo(0, 0)
-  shape.bezierCurveTo(0.04, 0.12, 0.06, 0.24, 0.02, 0.38)
-  shape.bezierCurveTo(-0.01, 0.46, -0.06, 0.50, -0.08, 0.56)
-  shape.bezierCurveTo(-0.10, 0.62, -0.06, 0.70, 0.0, 0.74)
-  shape.bezierCurveTo(0.06, 0.78, 0.14, 0.76, 0.18, 0.70)
-  shape.bezierCurveTo(0.22, 0.64, 0.24, 0.56, 0.24, 0.48)
-  shape.bezierCurveTo(0.24, 0.40, 0.20, 0.32, 0.16, 0.26)
-  shape.bezierCurveTo(0.14, 0.22, 0.14, 0.16, 0.16, 0.10)
-  shape.lineTo(0.18, 0)
+  shape.bezierCurveTo(0.04, 0.14, 0.06, 0.26, 0.02, 0.40)
+  shape.bezierCurveTo(-0.01, 0.48, -0.07, 0.52, -0.09, 0.58)
+  shape.bezierCurveTo(-0.11, 0.64, -0.07, 0.72, 0.0, 0.76)
+  shape.bezierCurveTo(0.07, 0.80, 0.15, 0.78, 0.19, 0.72)
+  shape.bezierCurveTo(0.23, 0.66, 0.25, 0.58, 0.25, 0.50)
+  shape.bezierCurveTo(0.25, 0.42, 0.21, 0.34, 0.17, 0.28)
+  shape.bezierCurveTo(0.15, 0.22, 0.15, 0.16, 0.17, 0.10)
+  shape.lineTo(0.19, 0)
   shape.lineTo(0, 0)
 
   return new THREE.ExtrudeGeometry(shape, {
-    depth: 0.22,
+    depth: 0.24,
     bevelEnabled: true,
-    bevelThickness: 0.04,
-    bevelSize: 0.04,
-    bevelSegments: 6,
+    bevelThickness: 0.05,
+    bevelSize: 0.05,
+    bevelSegments: 8,
   })
 }
 
 function bishopGeometry(): THREE.BufferGeometry {
   return lathe([
-    [0, 0], [0.34, 0], [0.34, 0.06], [0.29, 0.10], [0.17, 0.15],
-    [0.14, 0.22], [0.12, 0.42], [0.11, 0.58],
-    [0.15, 0.62], [0.16, 0.65], [0.15, 0.68], [0.11, 0.72],
-    [0.17, 0.80], [0.20, 0.90], [0.19, 1.00], [0.15, 1.08],
-    [0.08, 1.16], [0.03, 1.20],
-    [0.05, 1.22], [0.05, 1.26], [0, 1.28],
+    [0, 0], [0.36, 0], [0.36, 0.05], [0.31, 0.09], [0.18, 0.14],
+    [0.15, 0.20], [0.13, 0.38], [0.12, 0.54], [0.11, 0.62],
+    [0.15, 0.65], [0.16, 0.67], [0.15, 0.70], [0.11, 0.74],
+    [0.17, 0.82], [0.21, 0.92], [0.20, 1.02], [0.16, 1.10],
+    [0.09, 1.18], [0.04, 1.22],
+    [0.06, 1.24], [0.06, 1.28], [0, 1.30],
   ])
 }
 
 function queenGeometry(): THREE.BufferGeometry {
   return lathe([
-    [0, 0], [0.37, 0], [0.37, 0.06], [0.32, 0.10], [0.19, 0.15],
-    [0.15, 0.24], [0.13, 0.48], [0.12, 0.68], [0.11, 0.82],
-    [0.15, 0.86], [0.16, 0.89], [0.15, 0.92], [0.11, 0.96],
-    [0.16, 1.04], [0.21, 1.14], [0.22, 1.24], [0.19, 1.32],
-    [0.13, 1.40], [0.06, 1.44],
-    [0.07, 1.46], [0.07, 1.52], [0, 1.54],
+    [0, 0], [0.39, 0], [0.39, 0.05], [0.34, 0.09], [0.20, 0.14],
+    [0.16, 0.22], [0.14, 0.44], [0.13, 0.64], [0.12, 0.78], [0.11, 0.86],
+    [0.15, 0.89], [0.16, 0.91], [0.15, 0.94], [0.11, 0.98],
+    [0.17, 1.06], [0.22, 1.16], [0.23, 1.26], [0.20, 1.34],
+    [0.14, 1.42], [0.07, 1.48],
+    [0.09, 1.50], [0.10, 1.54], [0.09, 1.58], [0, 1.60],
   ])
 }
 
 function kingBodyGeometry(): THREE.LatheGeometry {
   return lathe([
-    [0, 0], [0.38, 0], [0.38, 0.06], [0.33, 0.10], [0.20, 0.16],
-    [0.16, 0.26], [0.14, 0.50], [0.13, 0.72], [0.12, 0.86],
-    [0.16, 0.90], [0.17, 0.93], [0.16, 0.96], [0.12, 1.00],
-    [0.17, 1.08], [0.23, 1.20], [0.24, 1.32], [0.21, 1.42],
-    [0.14, 1.50], [0.07, 1.56], [0, 1.58],
+    [0, 0], [0.40, 0], [0.40, 0.05], [0.35, 0.09], [0.21, 0.15],
+    [0.17, 0.24], [0.15, 0.46], [0.14, 0.68], [0.13, 0.82], [0.12, 0.90],
+    [0.16, 0.93], [0.17, 0.95], [0.16, 0.98], [0.12, 1.02],
+    [0.18, 1.10], [0.24, 1.22], [0.25, 1.34], [0.22, 1.44],
+    [0.15, 1.52], [0.08, 1.58], [0, 1.60],
   ])
 }
 
 function kingCrossGeometry(): THREE.BufferGeometry {
-  const vertical = new THREE.BoxGeometry(0.04, 0.20, 0.04)
-  const horizontal = new THREE.BoxGeometry(0.14, 0.04, 0.04)
-
-  vertical.translate(0, 1.68, 0)
-  horizontal.translate(0, 1.72, 0)
+  const vertical = new THREE.BoxGeometry(0.05, 0.22, 0.05)
+  const horizontal = new THREE.BoxGeometry(0.16, 0.05, 0.05)
+  vertical.translate(0, 1.71, 0)
+  horizontal.translate(0, 1.75, 0)
 
   const merged = new THREE.BufferGeometry()
   merged.setAttribute('position', mergeAttributes([
@@ -142,27 +143,27 @@ function mergeIndices(indices: THREE.BufferAttribute[], counts: number[]): THREE
       merged[indexOffset + j] = (idx.array as Uint16Array)[j] + vertexOffset
     }
     indexOffset += idx.count
-    if (i > 0) {
-      vertexOffset += counts[i - 1]
-    } else {
-      vertexOffset += counts[0]
-    }
+    vertexOffset += counts[i]
   }
   return new THREE.BufferAttribute(merged, 1)
 }
 
 const WHITE_MATERIAL_PROPS = {
-  color: '#F0E6D3',
-  metalness: 0.08,
-  roughness: 0.35,
-  envMapIntensity: 0.6,
+  color: '#F5EDE0',
+  metalness: 0.06,
+  roughness: 0.28,
+  envMapIntensity: 0.7,
+  clearcoat: 0.3,
+  clearcoatRoughness: 0.4,
 }
 
 const BLACK_MATERIAL_PROPS = {
-  color: '#1C1C1C',
-  metalness: 0.15,
-  roughness: 0.25,
-  envMapIntensity: 0.8,
+  color: '#1A1A1A',
+  metalness: 0.2,
+  roughness: 0.18,
+  envMapIntensity: 1.0,
+  clearcoat: 0.5,
+  clearcoatRoughness: 0.2,
 }
 
 const PIECE_SCALE: Record<string, number> = {
@@ -172,6 +173,24 @@ const PIECE_SCALE: Record<string, number> = {
   b: 0.38,
   q: 0.38,
   k: 0.38,
+}
+
+const geometryCache = new Map<string, { body: THREE.BufferGeometry; head?: THREE.ExtrudeGeometry; cross?: THREE.BufferGeometry }>()
+
+function getGeometries(type: string) {
+  if (geometryCache.has(type)) return geometryCache.get(type)!
+  let result: { body: THREE.BufferGeometry; head?: THREE.ExtrudeGeometry; cross?: THREE.BufferGeometry }
+  switch (type) {
+    case 'p': result = { body: pawnGeometry() }; break
+    case 'r': result = { body: rookGeometry() }; break
+    case 'n': result = { body: knightBaseGeometry(), head: knightHeadShape() }; break
+    case 'b': result = { body: bishopGeometry() }; break
+    case 'q': result = { body: queenGeometry() }; break
+    case 'k': result = { body: kingBodyGeometry(), cross: kingCrossGeometry() }; break
+    default: result = { body: pawnGeometry() }
+  }
+  geometryCache.set(type, result)
+  return result
 }
 
 interface ChessPieceProps {
@@ -187,52 +206,51 @@ export function ChessPiece({ type, pieceColor, position, targetPosition, selecte
   const groupRef = useRef<THREE.Group>(null)
   const [hovered, setHovered] = useState(false)
   const currentPos = useRef(new THREE.Vector3(...position))
-  const animProgress = useRef(1)
+  const targetVec = useRef(new THREE.Vector3(...targetPosition))
+  const animating = useRef(false)
+  const animT = useRef(0)
+  const startPos = useRef(new THREE.Vector3(...position))
 
   const scale = PIECE_SCALE[type] || 0.38
-
   const materialProps = pieceColor === 'w' ? WHITE_MATERIAL_PROPS : BLACK_MATERIAL_PROPS
-
-  const geometries = useMemo(() => {
-    switch (type) {
-      case 'p': return { body: pawnGeometry() }
-      case 'r': return { body: rookGeometry() }
-      case 'n': return { body: knightBaseGeometry(), head: knightHeadShape() }
-      case 'b': return { body: bishopGeometry() }
-      case 'q': return { body: queenGeometry() }
-      case 'k': return { body: kingBodyGeometry(), cross: kingCrossGeometry() }
-      default: return { body: pawnGeometry() }
-    }
-  }, [type])
+  const geometries = useMemo(() => getGeometries(type), [type])
 
   useFrame((_, delta) => {
     if (!groupRef.current) return
 
-    const target = new THREE.Vector3(...targetPosition)
-    const dist = currentPos.current.distanceTo(target)
+    const newTarget = new THREE.Vector3(...targetPosition)
+    if (!newTarget.equals(targetVec.current)) {
+      targetVec.current.copy(newTarget)
+      startPos.current.copy(currentPos.current)
+      animating.current = true
+      animT.current = 0
+    }
 
-    if (dist > 0.01) {
-      animProgress.current = Math.min(animProgress.current + delta * 4, 1)
-      currentPos.current.lerp(target, 1 - Math.exp(-12 * delta))
+    if (animating.current) {
+      animT.current = Math.min(animT.current + delta * 3.5, 1)
+      const t = 1 - Math.pow(1 - animT.current, 3)
 
-      const liftHeight = Math.sin(animProgress.current * Math.PI) * 0.3
+      currentPos.current.lerpVectors(startPos.current, targetVec.current, t)
+
+      const arcHeight = Math.sin(t * Math.PI) * 0.4
       groupRef.current.position.set(
         currentPos.current.x,
-        currentPos.current.y + liftHeight,
+        currentPos.current.y + arcHeight,
         currentPos.current.z,
       )
+
+      if (animT.current >= 1) {
+        animating.current = false
+        currentPos.current.copy(targetVec.current)
+      }
     } else {
-      currentPos.current.copy(target)
-      groupRef.current.position.copy(target)
-      animProgress.current = 0
+      groupRef.current.position.copy(currentPos.current)
     }
 
     if (selected) {
-      groupRef.current.position.y += Math.sin(Date.now() * 0.004) * 0.03 + 0.05
-    }
-
-    if (hovered && !selected) {
-      groupRef.current.position.y += 0.03
+      groupRef.current.position.y += Math.sin(Date.now() * 0.005) * 0.04 + 0.06
+    } else if (hovered) {
+      groupRef.current.position.y += 0.04
     }
   })
 
@@ -246,32 +264,33 @@ export function ChessPiece({ type, pieceColor, position, targetPosition, selecte
       onPointerOut={() => { setHovered(false); document.body.style.cursor = 'auto' }}
     >
       <mesh geometry={geometries.body} castShadow receiveShadow>
-        <meshStandardMaterial {...materialProps} />
+        <meshPhysicalMaterial {...materialProps} />
       </mesh>
 
       {type === 'n' && geometries.head && (
         <mesh
           geometry={geometries.head as THREE.ExtrudeGeometry}
-          position={[-0.09, 0.42, -0.11]}
+          position={[-0.10, 0.42, -0.12]}
           castShadow
           receiveShadow
         >
-          <meshStandardMaterial {...materialProps} />
+          <meshPhysicalMaterial {...materialProps} />
         </mesh>
       )}
 
       {type === 'k' && geometries.cross && (
         <mesh geometry={geometries.cross} castShadow>
-          <meshStandardMaterial {...materialProps} />
+          <meshPhysicalMaterial {...materialProps} />
         </mesh>
       )}
 
-      {(selected || hovered) && (
+      {selected && (
         <pointLight
-          position={[0, 1.5, 0]}
-          intensity={selected ? 2 : 0.8}
-          color={selected ? '#FFD700' : '#FFFFFF'}
-          distance={3}
+          position={[0, 1.8, 0]}
+          intensity={3}
+          color="#FFD700"
+          distance={4}
+          decay={2}
         />
       )}
     </group>

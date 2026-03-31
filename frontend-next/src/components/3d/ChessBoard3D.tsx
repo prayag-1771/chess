@@ -2,16 +2,17 @@
 
 import { useMemo, useRef } from 'react'
 import * as THREE from 'three'
-import { useFrame } from '@react-three/fiber'
 import type { Color, PieceSymbol, Square } from 'chess.js'
 import { ChessPiece } from './ChessPieces'
 
 const LIGHT_SQUARE = '#E8D5B5'
 const DARK_SQUARE = '#B58863'
 const SELECTED_SQUARE = '#F6F669'
-const LEGAL_MOVE_COLOR = '#7B61FF'
+const LAST_MOVE_LIGHT = '#CDD26A'
+const LAST_MOVE_DARK = '#AAA23A'
+const LEGAL_MOVE_COLOR = '#4A4A4A'
+const LEGAL_CAPTURE_COLOR = '#CC3333'
 const FRAME_COLOR = '#3D2B1F'
-const FELT_COLOR = '#1A5C2A'
 
 interface BoardSquare {
   square: Square
@@ -33,31 +34,43 @@ function squareToWorld(col: number, row: number): [number, number, number] {
 }
 
 function BoardFrame() {
-  const frameThickness = 0.3
-  const boardSize = 8
-  const frameHeight = 0.15
-  const innerSize = boardSize
-  const outerSize = boardSize + frameThickness * 2
+  const outerSize = 8.6
+  const frameHeight = 0.18
 
   return (
-    <group position={[0, -0.08, 0]}>
-      <mesh position={[0, -0.075, 0]} receiveShadow>
+    <group position={[0, -0.09, 0]}>
+      <mesh position={[0, -0.09, 0]} receiveShadow castShadow>
         <boxGeometry args={[outerSize, frameHeight, outerSize]} />
-        <meshStandardMaterial color={FRAME_COLOR} roughness={0.6} metalness={0.1} />
-      </mesh>
-
-      <mesh position={[0, 0.001, 0]} receiveShadow>
-        <boxGeometry args={[innerSize, 0.01, innerSize]} />
-        <meshStandardMaterial color={FELT_COLOR} roughness={0.9} />
+        <meshPhysicalMaterial
+          color={FRAME_COLOR}
+          roughness={0.45}
+          metalness={0.08}
+          clearcoat={0.2}
+          clearcoatRoughness={0.6}
+        />
       </mesh>
     </group>
   )
 }
 
-function BoardSquares({ selectedSquare, legalMoves, color, onSquareClick }: {
+function getSquareColor(
+  squareName: Square,
+  isLight: boolean,
+  selectedSquare: Square | null,
+  lastMove: { from: Square; to: Square } | null,
+): string {
+  if (selectedSquare === squareName) return SELECTED_SQUARE
+  if (lastMove && (lastMove.from === squareName || lastMove.to === squareName)) {
+    return isLight ? LAST_MOVE_LIGHT : LAST_MOVE_DARK
+  }
+  return isLight ? LIGHT_SQUARE : DARK_SQUARE
+}
+
+function BoardSquares({ board, selectedSquare, legalMoves, lastMove, onSquareClick }: {
+  board: (BoardSquare | null)[][]
   selectedSquare: Square | null
   legalMoves: Square[]
-  color: string | null
+  lastMove: { from: Square; to: Square } | null
   onSquareClick: (square: Square) => void
 }) {
   const squares = useMemo(() => {
@@ -77,12 +90,10 @@ function BoardSquares({ selectedSquare, legalMoves, color, onSquareClick }: {
   return (
     <group>
       {squares.map(({ col, row, isLight, squareName }) => {
-        const isSelected = selectedSquare === squareName
         const isLegalMove = legalMoves.includes(squareName)
         const [x, , z] = squareToWorld(col, row)
-
-        let squareColor = isLight ? LIGHT_SQUARE : DARK_SQUARE
-        if (isSelected) squareColor = SELECTED_SQUARE
+        const sqColor = getSquareColor(squareName, isLight, selectedSquare, lastMove)
+        const hasPiece = board[row]?.[col] !== null
 
         return (
           <group key={squareName}>
@@ -95,14 +106,26 @@ function BoardSquares({ selectedSquare, legalMoves, color, onSquareClick }: {
               onPointerOut={() => { document.body.style.cursor = 'auto' }}
             >
               <planeGeometry args={[1, 1]} />
-              <meshStandardMaterial color={squareColor} roughness={0.8} metalness={0.05} />
+              <meshStandardMaterial color={sqColor} roughness={0.75} metalness={0.05} />
             </mesh>
 
-            {isLegalMove && (
-              <mesh position={[x, 0.01, z]} rotation={[-Math.PI / 2, 0, 0]}>
-                <circleGeometry args={[0.15, 16]} />
+            {isLegalMove && !hasPiece && (
+              <mesh position={[x, 0.008, z]} rotation={[-Math.PI / 2, 0, 0]}>
+                <circleGeometry args={[0.16, 20]} />
                 <meshStandardMaterial
                   color={LEGAL_MOVE_COLOR}
+                  transparent
+                  opacity={0.5}
+                  roughness={0.6}
+                />
+              </mesh>
+            )}
+
+            {isLegalMove && hasPiece && (
+              <mesh position={[x, 0.008, z]} rotation={[-Math.PI / 2, 0, 0]}>
+                <ringGeometry args={[0.40, 0.50, 24]} />
+                <meshStandardMaterial
+                  color={LEGAL_CAPTURE_COLOR}
                   transparent
                   opacity={0.6}
                   roughness={0.5}
@@ -112,42 +135,6 @@ function BoardSquares({ selectedSquare, legalMoves, color, onSquareClick }: {
           </group>
         )
       })}
-    </group>
-  )
-}
-
-function CoordinateLabels({ color }: { color: string | null }) {
-  const labels = useMemo(() => {
-    const files = 'abcdefgh'
-    const result: { text: string; position: [number, number, number]; isFile: boolean }[] = []
-
-    for (let i = 0; i < 8; i++) {
-      result.push({
-        text: files[i],
-        position: [i - 3.5, 0.002, 4.25],
-        isFile: true,
-      })
-    }
-
-    for (let i = 0; i < 8; i++) {
-      result.push({
-        text: String(8 - i),
-        position: [-4.25, 0.002, i - 3.5],
-        isFile: false,
-      })
-    }
-
-    return result
-  }, [])
-
-  return (
-    <group>
-      {labels.map(({ text, position }) => (
-        <mesh key={text + position.join(',')} position={position} rotation={[-Math.PI / 2, 0, 0]}>
-          <planeGeometry args={[0.3, 0.3]} />
-          <meshBasicMaterial transparent opacity={0} />
-        </mesh>
-      ))}
     </group>
   )
 }
@@ -163,14 +150,10 @@ interface PieceTracker {
 }
 
 export function ChessBoard3D({ board, color, selectedSquare, legalMoves, lastMove, onSquareClick }: ChessBoard3DProps) {
-  const prevPiecesRef = useRef<Map<string, { col: number; row: number }>>(new Map())
   const groupRef = useRef<THREE.Group>(null)
 
   const pieces = useMemo(() => {
     const result: PieceTracker[] = []
-    const prevPieces = prevPiecesRef.current
-    const newPieces = new Map<string, { col: number; row: number }>()
-
     const pieceCounts: Record<string, number> = {}
 
     for (let row = 0; row < 8; row++) {
@@ -199,12 +182,10 @@ export function ChessBoard3D({ board, color, selectedSquare, legalMoves, lastMov
           }
         }
 
-        newPieces.set(key, { col, row })
         result.push({ key, type: piece.type, pieceColor: piece.color, col, row, prevCol, prevRow })
       }
     }
 
-    prevPiecesRef.current = newPieces
     return result
   }, [board, lastMove])
 
@@ -214,12 +195,12 @@ export function ChessBoard3D({ board, color, selectedSquare, legalMoves, lastMov
     <group ref={groupRef} rotation={rotation}>
       <BoardFrame />
       <BoardSquares
+        board={board}
         selectedSquare={selectedSquare}
         legalMoves={legalMoves}
-        color={color}
+        lastMove={lastMove}
         onSquareClick={onSquareClick}
       />
-      <CoordinateLabels color={color} />
 
       {pieces.map((piece) => {
         const [tx, , tz] = squareToWorld(piece.col, piece.row)
