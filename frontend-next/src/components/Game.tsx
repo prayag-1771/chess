@@ -8,8 +8,9 @@ import {
 } from '../messages'
 import { useEffect, useState, useCallback } from 'react'
 import { Chess } from 'chess.js'
-import type { Square } from 'chess.js'
+import type { Square, Move } from 'chess.js'
 import { GameScene3D } from './3d/GameScene3D'
+import { useSound } from '../hooks/useSound'
 
 type GameOverResult = {
   winner: 'white' | 'black' | 'draw'
@@ -29,6 +30,21 @@ export const Game = () => {
   const [drawOffered, setDrawOffered] = useState(false)
   const [waitingForOpponent, setWaitingForOpponent] = useState(false)
   const socket = useSocket()
+  const playSound = useSound()
+
+  const playMoveSound = useCallback((result: Move, isCheck: boolean) => {
+    if (isCheck) {
+      playSound('check')
+    } else if (result.flags.includes('p')) {
+      playSound('promote')
+    } else if (result.flags.includes('c') || result.flags.includes('e')) {
+      playSound('capture')
+    } else if (result.flags.includes('k') || result.flags.includes('q')) {
+      playSound('castle')
+    } else {
+      playSound('place')
+    }
+  }, [playSound])
 
   useEffect(() => {
     if (!socket) return
@@ -57,6 +73,7 @@ export const Game = () => {
             const result = chess.move(move)
             if (result) {
               setLastMove({ from: result.from as Square, to: result.to as Square })
+              playMoveSound(result, chess.inCheck())
             }
           } catch {
             // ignore invalid moves from server
@@ -77,6 +94,7 @@ export const Game = () => {
           } else {
             setStatus(`${capitalize(result.winner)} wins — ${formatReason(result.reason)}`)
           }
+          playSound('gameOver')
           break
         }
 
@@ -109,7 +127,7 @@ export const Game = () => {
           break
       }
     }
-  }, [socket, chess, started])
+  }, [socket, chess, started, playSound, playMoveSound])
 
   const handleSquareClick = useCallback((square: Square) => {
     if (!started || !socket) return
@@ -121,6 +139,7 @@ export const Game = () => {
     if (chess.turn() !== myColor) {
       // But allow selecting own pieces for inspection
       if (piece && piece.color === myColor) {
+        playSound('pickup')
         setSelectedSquare(square)
         const moves = chess.moves({ square, verbose: true })
         setLegalMoves(moves.map((m) => m.to as Square))
@@ -129,6 +148,7 @@ export const Game = () => {
     }
 
     if (piece && piece.color === myColor) {
+      playSound('pickup')
       setSelectedSquare(square)
       const moves = chess.moves({ square, verbose: true })
       setLegalMoves(moves.map((m) => m.to as Square))
@@ -156,6 +176,7 @@ export const Game = () => {
         if (result) {
           setLastMove({ from: result.from as Square, to: result.to as Square })
           setBoard(chess.board())
+          playMoveSound(result, chess.inCheck())
           socket.send(JSON.stringify({
             type: MOVE,
             move: {
@@ -171,7 +192,7 @@ export const Game = () => {
       setSelectedSquare(null)
       setLegalMoves([])
     }
-  }, [started, socket, chess, color, selectedSquare])
+  }, [started, socket, chess, color, selectedSquare, playSound, playMoveSound])
 
   const handleResign = useCallback(() => {
     if (!started || !socket) return
