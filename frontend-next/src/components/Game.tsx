@@ -33,6 +33,8 @@ export const Game = () => {
   const [timeLeft, setTimeLeft] = useState<{ white: number, black: number } | null>(null)
   const [pendingPromotion, setPendingPromotion] = useState<{ from: Square, to: Square } | null>(null)
   const [confirmModal, setConfirmModal] = useState<'resign' | 'draw' | null>(null)
+  const [roomIdInput, setRoomIdInput] = useState('')
+  const [roomUrl, setRoomUrl] = useState('')
   
   const socket = useSocket()
   const playSound = useSound()
@@ -50,6 +52,16 @@ export const Game = () => {
       playSound('place')
     }
   }, [playSound])
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search)
+      const room = urlParams.get('room')
+      if (room) {
+        setRoomIdInput(room)
+      }
+    }
+  }, [])
 
   useEffect(() => {
     if (!socket) return
@@ -281,6 +293,30 @@ export const Game = () => {
     setConfirmModal(null)
   }, [started, socket])
 
+  const handleCreateRoom = useCallback(() => {
+    if (!socket) return
+    const newRoomId = Math.random().toString(36).substring(2, 8).toUpperCase()
+    window.history.pushState({}, '', `?room=${newRoomId}`)
+    setRoomUrl(`${window.location.origin}?room=${newRoomId}`)
+    socket.send(JSON.stringify({
+      type: INIT_GAME,
+      payload: { timeControl, roomId: newRoomId }
+    }))
+    setWaitingForOpponent(true)
+    playSound('place')
+  }, [socket, timeControl, playSound])
+
+  const handleJoinRoom = useCallback(() => {
+    if (!socket || !roomIdInput) return
+    window.history.pushState({}, '', `?room=${roomIdInput}`)
+    socket.send(JSON.stringify({
+      type: INIT_GAME,
+      payload: { timeControl, roomId: roomIdInput }
+    }))
+    setWaitingForOpponent(true)
+    playSound('place')
+  }, [socket, roomIdInput, timeControl, playSound])
+
   const handleDrawAccept = useCallback(() => {
     if (!socket) return
     socket.send(JSON.stringify({ type: DRAW_ACCEPT }))
@@ -421,6 +457,18 @@ export const Game = () => {
                 <p className="lobby-title">Searching…</p>
                 <p className="lobby-sub">Waiting for an opponent</p>
                 <div className="searching-spinner" />
+                {roomUrl && (
+                  <div className="room-share">
+                    <p style={{marginTop: 8, fontSize: '0.9rem', color: '#B58863'}}>Share link with friend:</p>
+                    <input 
+                      type="text" 
+                      className="room-share-input"
+                      readOnly 
+                      value={roomUrl} 
+                      onClick={e => (e.target as HTMLInputElement).select()} 
+                    />
+                  </div>
+                )}
               </>
             ) : (
               <>
@@ -440,10 +488,32 @@ export const Game = () => {
                 <button
                   id="btn-play-online"
                   className="btn-play"
-                  onClick={() => socket.send(JSON.stringify({ type: INIT_GAME, payload: { timeControl } }))}
+                  onClick={() => {
+                    window.history.pushState({}, '', window.location.pathname)
+                    socket.send(JSON.stringify({ type: INIT_GAME, payload: { timeControl } }))
+                  }}
                 >
                   <span>▶</span> Play Online
                 </button>
+
+                <div className="room-controls">
+                  <span className="room-divider">— or —</span>
+                  <div className="room-flex">
+                    <input 
+                      type="text" 
+                      className="room-input" 
+                      placeholder="Room Code" 
+                      value={roomIdInput} 
+                      onChange={(e) => setRoomIdInput(e.target.value)} 
+                    />
+                    <button className="btn-room" onClick={handleJoinRoom} disabled={!roomIdInput}>
+                      Join
+                    </button>
+                  </div>
+                  <button className="btn-room btn-create" onClick={handleCreateRoom}>
+                    Create Private Room
+                  </button>
+                </div>
               </>
             )}
             {status && !gameResult && <p className="panel-status gameover">{status}</p>}

@@ -814,6 +814,80 @@ img, canvas { display: block; }
   cursor: pointer;
 }
 
+.room-controls {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.room-divider {
+  display: block;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--clr-text-sub);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.room-flex {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.room-input {
+  flex: 1;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: #fff;
+  padding: 10px;
+  border-radius: var(--r-sm);
+  font-family: monospace;
+  min-width: 0;
+}
+
+.room-share-input {
+  width: 100%;
+  background: rgba(0,0,0,0.4);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: #F6F669;
+  padding: 10px;
+  border-radius: var(--r-sm);
+  font-family: monospace;
+  cursor: copy;
+  text-align: center;
+  margin-top: 8px;
+}
+
+.btn-room {
+  background: rgba(255,255,255,0.05);
+  color: var(--clr-text);
+  border: 1px solid rgba(255,255,255,0.1);
+  padding: 10px 16px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.btn-room:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-room:hover:not(:disabled) {
+  background: rgba(212, 175, 55, 0.2);
+  border-color: rgba(212, 175, 55, 0.5);
+  color: var(--clr-gold);
+}
+
+.btn-create {
+  width: 100%;
+}
+
 @media (max-width: 1024px) {
   .hero-section {
     grid-template-columns: 1fr;
