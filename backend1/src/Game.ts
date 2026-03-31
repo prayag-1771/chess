@@ -6,9 +6,7 @@ import {
   MOVE,
   INVALID_MOVE,
   DRAW_OFFER,
-  DRAW_ACCEPT,
   DRAW_DECLINE,
-  RESIGN,
   OPPONENT_DISCONNECTED,
 } from "./messages";
 
