@@ -255,44 +255,111 @@ export function ChessPiece({ type, pieceColor, position, targetPosition, selecte
   })
 
   return (
-    <group
-      ref={groupRef}
-      position={position}
-      scale={[scale, scale, scale]}
-      onClick={(e) => { e.stopPropagation(); onClick?.() }}
-      onPointerOver={(e) => { e.stopPropagation(); setHovered(true); document.body.style.cursor = 'pointer' }}
-      onPointerOut={() => { setHovered(false); document.body.style.cursor = 'auto' }}
-    >
-      <mesh geometry={geometries.body} castShadow receiveShadow>
-        <meshPhysicalMaterial {...materialProps} />
-      </mesh>
-
-      {type === 'n' && geometries.head && (
-        <mesh
-          geometry={geometries.head as THREE.ExtrudeGeometry}
-          position={[-0.10, 0.42, -0.12]}
-          castShadow
-          receiveShadow
-        >
+    <>
+      <group
+        ref={groupRef}
+        position={position}
+        scale={[scale, scale, scale]}
+        onClick={(e) => { e.stopPropagation(); onClick?.() }}
+        onPointerOver={(e) => { e.stopPropagation(); setHovered(true); document.body.style.cursor = 'pointer' }}
+        onPointerOut={() => { setHovered(false); document.body.style.cursor = 'auto' }}
+      >
+        <mesh geometry={geometries.body} castShadow receiveShadow>
           <meshPhysicalMaterial {...materialProps} />
         </mesh>
-      )}
 
-      {type === 'k' && geometries.cross && (
-        <mesh geometry={geometries.cross} castShadow>
-          <meshPhysicalMaterial {...materialProps} />
-        </mesh>
-      )}
+        {type === 'n' && geometries.head && (
+          <mesh
+            geometry={geometries.head as THREE.ExtrudeGeometry}
+            position={[-0.10, 0.42, -0.12]}
+            castShadow
+            receiveShadow
+          >
+            <meshPhysicalMaterial {...materialProps} />
+          </mesh>
+        )}
 
-      {selected && (
-        <pointLight
-          position={[0, 1.8, 0]}
-          intensity={3}
-          color="#FFD700"
-          distance={4}
-          decay={2}
-        />
-      )}
-    </group>
+        {type === 'k' && geometries.cross && (
+          <mesh geometry={geometries.cross} castShadow>
+            <meshPhysicalMaterial {...materialProps} />
+          </mesh>
+        )}
+
+        {selected && (
+          <pointLight
+            position={[0, 1.8, 0]}
+            intensity={3}
+            color="#FFD700"
+            distance={4}
+            decay={2}
+          />
+        )}
+      </group>
+      {/* World-space (board-space) particle trail */}
+      <TrailSystem isMoving={animating.current} positionVec={currentPos.current} active={targetPosition[0] !== position[0] || targetPosition[2] !== position[2]} />
+    </>
+  )
+}
+
+function TrailSystem({ isMoving, positionVec, active }: { isMoving: boolean; positionVec: THREE.Vector3, active: boolean }) {
+  const meshRef = useRef<THREE.InstancedMesh>(null)
+  const dummy = useRef(new THREE.Object3D())
+  const particles = useRef<Array<{ pos: THREE.Vector3; age: number; maxAge: number; opacity: number }>>([])
+  
+  useFrame((_, delta) => {
+    if (!meshRef.current) return
+    
+    // Spawn particles if moving
+    if (isMoving && active) {
+      // Spawn 2 particles per frame
+      for (let i = 0; i < 2; i++) {
+        if (particles.current.length > 40) break // limit spawn
+        particles.current.push({
+          pos: positionVec.clone().add(new THREE.Vector3(
+            (Math.random() - 0.5) * 0.3, 
+            0.1 + Math.random() * 0.3, 
+            (Math.random() - 0.5) * 0.3
+          )),
+          age: 0,
+          maxAge: 0.4 + Math.random() * 0.4,
+          opacity: 1
+        })
+      }
+    }
+    
+    // Update particles if any exist
+    if (particles.current.length > 0) {
+      particles.current.forEach(p => {
+        p.age += delta
+        p.pos.y += delta * 0.2 // float up slightly
+      })
+      
+      particles.current = particles.current.filter(p => p.age < p.maxAge)
+      
+      particles.current.forEach((p, i) => {
+        if (i >= 50) return // max instances
+        dummy.current.position.copy(p.pos)
+        const scale = 1 - (p.age / p.maxAge)
+        dummy.current.scale.set(scale, scale, scale)
+        dummy.current.updateMatrix()
+        meshRef.current!.setMatrixAt(i, dummy.current.matrix)
+      })
+      
+      // Clear unused instances
+      for (let i = particles.current.length; i < 50; i++) {
+        dummy.current.scale.set(0, 0, 0)
+        dummy.current.updateMatrix()
+        meshRef.current!.setMatrixAt(i, dummy.current.matrix)
+      }
+      
+      meshRef.current.instanceMatrix.needsUpdate = true
+    }
+  })
+  
+  return (
+    <instancedMesh ref={meshRef} args={[undefined, undefined, 50]}>
+      <sphereGeometry args={[0.06, 6, 6]} />
+      <meshBasicMaterial color="#FFD700" transparent opacity={0.6} depthWrite={false} blending={THREE.AdditiveBlending} />
+    </instancedMesh>
   )
 }
