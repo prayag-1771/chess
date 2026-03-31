@@ -29,6 +29,9 @@ export const Game = () => {
   const [gameResult, setGameResult] = useState<GameOverResult | null>(null)
   const [drawOffered, setDrawOffered] = useState(false)
   const [waitingForOpponent, setWaitingForOpponent] = useState(false)
+  const [timeControl, setTimeControl] = useState('10+0')
+  const [timeLeft, setTimeLeft] = useState<{ white: number, black: number } | null>(null)
+  
   const socket = useSocket()
   const playSound = useSound()
 
@@ -65,18 +68,24 @@ export const Game = () => {
           setStatus('')
           setGameResult(null)
           setWaitingForOpponent(false)
+          if (message.payload.timeLeftMs) {
+            setTimeLeft(message.payload.timeLeftMs)
+          }
           break
 
         case MOVE: {
-          const move = message.payload
+          const moveData = message.payload
           try {
-            const result = chess.move(move)
+            const result = chess.move(moveData)
             if (result) {
               setLastMove({ from: result.from as Square, to: result.to as Square })
               playMoveSound(result, chess.inCheck())
             }
           } catch {
             // ignore invalid moves from server
+          }
+          if (moveData.timeLeftMs) {
+            setTimeLeft(moveData.timeLeftMs)
           }
           setBoard(chess.board())
           setSelectedSquare(null)
@@ -128,6 +137,34 @@ export const Game = () => {
       }
     }
   }, [socket, chess, started, playSound, playMoveSound])
+
+  // Local timer tick
+  useEffect(() => {
+    if (!started || !timeLeft) return
+    let lastTick = Date.now()
+
+    const interval = setInterval(() => {
+      const now = Date.now()
+      const delta = now - lastTick
+      lastTick = now
+
+      // Turn logic: we only decrement the active player's clock if at least 1 move has been made
+      // White starts. If history length is 0, we can also wait until first move or tick white immediately. 
+      // Usually clock starts on first move, but for simplicity let's start it right away.
+      const isWhiteTurn = chess.turn() === 'w'
+      if (chess.history().length > 0) {
+        setTimeLeft(prev => {
+          if (!prev) return prev
+          const newTime = { ...prev }
+          if (isWhiteTurn) newTime.white = Math.max(0, newTime.white - delta)
+          else newTime.black = Math.max(0, newTime.black - delta)
+          return newTime
+        })
+      }
+    }, 100)
+
+    return () => clearInterval(interval)
+  }, [started, timeLeft, chess])
 
   const handleSquareClick = useCallback((square: Square) => {
     if (!started || !socket) return
@@ -277,7 +314,7 @@ export const Game = () => {
                   className="btn-play"
                   onClick={() => {
                     handlePlayAgain()
-                    socket.send(JSON.stringify({ type: INIT_GAME }))
+                    socket.send(JSON.stringify({ type: INIT_GAME, payload: { timeControl } }))
                   }}
                 >
                   <span>🔄</span> Play Again
@@ -292,11 +329,22 @@ export const Game = () => {
             ) : (
               <>
                 <p className="lobby-title">Find a Match</p>
-                <p className="lobby-sub">You&apos;ll be paired with another player</p>
+                <p className="lobby-sub">Select a time control</p>
+                <div className="time-controls">
+                  {['3+2', '5+0', '10+0'].map(tc => (
+                    <button 
+                      key={tc}
+                      className={`btn-time ${timeControl === tc ? 'active' : ''}`}
+                      onClick={() => setTimeControl(tc)}
+                    >
+                      {tc}
+                    </button>
+                  ))}
+                </div>
                 <button
                   id="btn-play-online"
                   className="btn-play"
-                  onClick={() => socket.send(JSON.stringify({ type: INIT_GAME }))}
+                  onClick={() => socket.send(JSON.stringify({ type: INIT_GAME, payload: { timeControl } }))}
                 >
                   <span>▶</span> Play Online
                 </button>
@@ -310,7 +358,25 @@ export const Game = () => {
           <div className="panel-game-info">
             <div className="player-badge">
               <span className={`piece-dot ${color === 'white' ? 'dot-white' : 'dot-black'}`} />
-              <span>You play <strong>{color === 'white' ? 'White' : 'Black'}</strong></span>
+              <div className="player-badge-info">
+                <span>You play <strong>{color === 'white' ? 'White' : 'Black'}</strong></span>
+                {timeLeft && (
+                  <span className="clock">
+                    {formatTime(color === 'white' ? timeLeft.white : timeLeft.black)}
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="player-badge">
+              <span className={`piece-dot ${color === 'white' ? 'dot-black' : 'dot-white'}`} />
+              <div className="player-badge-info">
+                <span>Opponent</span>
+                {timeLeft && (
+                  <span className="clock">
+                    {formatTime(color === 'black' ? timeLeft.white : timeLeft.black)}
+                  </span>
+                )}
+              </div>
             </div>
 
             <div className={`turn-indicator ${isMyTurn ? 'your-turn' : 'their-turn'}`}>
@@ -397,4 +463,11 @@ function formatReason(reason: string): string {
 
 function capitalize(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1)
+}
+
+function formatTime(ms: number): string {
+  const totalSeconds = Math.max(0, Math.ceil(ms / 1000))
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`
 }
