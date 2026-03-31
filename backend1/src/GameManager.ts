@@ -11,7 +11,6 @@ import {
 } from "./messages";
 import { Game } from "./Game";
 
-/** Simple per-socket rate limiter */
 class RateLimiter {
   private timestamps: Map<WebSocket, number[]> = new Map();
   private maxMessages: number;
@@ -29,7 +28,6 @@ class RateLimiter {
       times = [];
       this.timestamps.set(socket, times);
     }
-    // Remove timestamps outside the window
     const cutoff = now - this.windowMs;
     while (times.length > 0 && (times[0] ?? 0) < cutoff) {
       times.shift();
@@ -52,22 +50,53 @@ export class GameManager {
   private users: Set<WebSocket> = new Set();
   private socketToGame: Map<WebSocket, Game> = new Map();
   private rateLimiter = new RateLimiter();
+  private alive: Set<WebSocket> = new Set();
+  private heartbeatInterval: ReturnType<typeof setInterval> | null = null;
+
+  constructor() {
+    this.startHeartbeat();
+  }
+
+  private startHeartbeat(): void {
+    this.heartbeatInterval = setInterval(() => {
+      for (const socket of this.users) {
+        if (!this.alive.has(socket)) {
+          socket.terminate();
+          continue;
+        }
+        this.alive.delete(socket);
+        socket.ping();
+      }
+    }, 30_000);
+  }
+
+  stopHeartbeat(): void {
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval);
+      this.heartbeatInterval = null;
+    }
+  }
 
   addUser(socket: WebSocket): void {
     this.users.add(socket);
+    this.alive.add(socket);
+
+    socket.on("pong", () => {
+      this.alive.add(socket);
+    });
+
     this.addHandler(socket);
   }
 
   removeUser(socket: WebSocket): void {
     this.users.delete(socket);
+    this.alive.delete(socket);
     this.rateLimiter.removeSocket(socket);
 
-    // If the disconnecting user was the pending user, clear them
     if (this.pendingUser === socket) {
       this.pendingUser = null;
     }
 
-    // If the user was in a game, notify the opponent and clean up
     const game = this.socketToGame.get(socket);
     if (game) {
       game.handleDisconnect(socket);
@@ -75,14 +104,13 @@ export class GameManager {
     }
   }
 
-  /** Remove a finished game from tracking */
   private cleanupGame(game: Game): void {
     this.games = this.games.filter((g) => g !== game);
     this.socketToGame.delete(game.player1);
     this.socketToGame.delete(game.player2);
+    console.log(`[${game.id}] cleaned up, ${this.games.length} active game(s)`);
   }
 
-  /** Safely send JSON to a socket */
   private safeSend(socket: WebSocket, data: object): void {
     if (socket.readyState === WebSocket.OPEN) {
       socket.send(JSON.stringify(data));
@@ -91,7 +119,6 @@ export class GameManager {
 
   private addHandler(socket: WebSocket): void {
     socket.on("message", (data) => {
-      // Rate limit check
       if (!this.rateLimiter.isAllowed(socket)) {
         this.safeSend(socket, {
           type: ERROR,
@@ -100,7 +127,6 @@ export class GameManager {
         return;
       }
 
-      // Safe JSON parsing
       let message: any;
       try {
         message = JSON.parse(data.toString());
@@ -149,7 +175,6 @@ export class GameManager {
   }
 
   private handleInitGame(socket: WebSocket): void {
-    // Prevent duplicate: user already in a game
     if (this.socketToGame.has(socket)) {
       this.safeSend(socket, {
         type: ERROR,
@@ -158,7 +183,6 @@ export class GameManager {
       return;
     }
 
-    // Prevent duplicate: user is already pending
     if (this.pendingUser === socket) {
       this.safeSend(socket, {
         type: WAITING,
@@ -167,24 +191,18 @@ export class GameManager {
       return;
     }
 
-    if (this.pendingUser) {
-      // Verify pending user's socket is still alive
-      if (this.pendingUser.readyState !== WebSocket.OPEN) {
-        this.pendingUser = null;
-      }
+    if (this.pendingUser && this.pendingUser.readyState !== WebSocket.OPEN) {
+      this.pendingUser = null;
     }
 
     if (this.pendingUser && this.pendingUser !== socket) {
-      // Match found — create the game
       const game = new Game(this.pendingUser, socket);
       this.games.push(game);
       this.socketToGame.set(this.pendingUser, game);
       this.socketToGame.set(socket, game);
       this.pendingUser = null;
 
-      console.log(
-        `Game started: ${this.games.length} active game(s)`
-      );
+      console.log(`${this.games.length} active game(s)`);
     } else {
       this.pendingUser = socket;
       this.safeSend(socket, {
@@ -204,7 +222,6 @@ export class GameManager {
       return;
     }
 
-    // Validate move payload
     if (!message.move || typeof message.move !== "object") {
       this.safeSend(socket, {
         type: ERROR,
@@ -215,7 +232,6 @@ export class GameManager {
 
     game.makeMove(socket, message.move);
 
-    // If game ended after this move, clean up
     if (game.isOver) {
       this.cleanupGame(game);
     }

@@ -4,14 +4,17 @@ exports.Game = void 0;
 const ws_1 = require("ws");
 const chess_js_1 = require("chess.js");
 const messages_1 = require("./messages");
+const crypto_1 = require("crypto");
 class Game {
-    player1; // white
-    player2; // black
+    id;
+    player1;
+    player2;
     board;
     startTime;
     isOver = false;
     drawOfferedBy = null;
     constructor(player1, player2) {
+        this.id = (0, crypto_1.randomUUID)().slice(0, 8);
         this.player1 = player1;
         this.player2 = player2;
         this.board = new chess_js_1.Chess();
@@ -24,8 +27,8 @@ class Game {
             type: messages_1.INIT_GAME,
             payload: { color: "black" },
         });
+        console.log(`[${this.id}] game created`);
     }
-    /** Safely send JSON to a socket — no crash if socket is closed */
     safeSend(socket, data) {
         if (socket.readyState === ws_1.WebSocket.OPEN) {
             socket.send(JSON.stringify(data));
@@ -39,28 +42,23 @@ class Game {
     getColor(socket) {
         return socket === this.player1 ? "white" : "black";
     }
-    /** Determine whose turn it is based on chess.js (single source of truth) */
     isPlayersTurn(socket) {
-        const turn = this.board.turn(); // 'w' or 'b'
+        const turn = this.board.turn();
         if (turn === "w" && socket === this.player1)
             return true;
         if (turn === "b" && socket === this.player2)
             return true;
         return false;
     }
-    /** Broadcast game-over to both players and mark game as finished */
     endGame(result) {
         if (this.isOver)
             return;
         this.isOver = true;
-        const payload = {
-            type: messages_1.GAME_OVER,
-            payload: result,
-        };
+        const payload = { type: messages_1.GAME_OVER, payload: result };
         this.safeSend(this.player1, payload);
         this.safeSend(this.player2, payload);
+        console.log(`[${this.id}] game over: ${result.winner} wins (${result.reason})`);
     }
-    /** Check if the current board position ends the game */
     checkGameState() {
         if (!this.board.isGameOver())
             return;
@@ -86,7 +84,6 @@ class Game {
     makeMove(socket, move) {
         if (this.isOver)
             return;
-        // Validate it's this player's turn via chess.js (single source of truth)
         if (!this.isPlayersTurn(socket)) {
             this.safeSend(socket, {
                 type: messages_1.INVALID_MOVE,
@@ -94,7 +91,6 @@ class Game {
             });
             return;
         }
-        // Validate move fields
         if (!move ||
             typeof move.from !== "string" ||
             typeof move.to !== "string") {
@@ -105,17 +101,15 @@ class Game {
             return;
         }
         try {
-            // Auto-promote to queen if reaching the last rank without a promotion field
             const moveObj = {
                 from: move.from,
                 to: move.to,
             };
-            // Detect pawn promotion: pawn moving to rank 1 or 8
             const piece = this.board.get(move.from);
             if (piece && piece.type === "p") {
                 const toRank = move.to.charAt(1);
                 if (toRank === "1" || toRank === "8") {
-                    moveObj.promotion = move.promotion || "q"; // default queen
+                    moveObj.promotion = move.promotion || "q";
                 }
             }
             const result = this.board.move(moveObj);
@@ -126,9 +120,8 @@ class Game {
                 });
                 return;
             }
-            // Clear any pending draw offer after a move
             this.drawOfferedBy = null;
-            // Send the move to the opponent (include promotion if present)
+            console.log(`[${this.id}] ${this.getColor(socket)} plays ${result.from}-${result.to}${result.promotion ? "=" + result.promotion : ""}`);
             const movePayload = {
                 from: result.from,
                 to: result.to,
@@ -140,10 +133,9 @@ class Game {
                 type: messages_1.MOVE,
                 payload: movePayload,
             });
-            // Check for game-ending conditions
             this.checkGameState();
         }
-        catch (e) {
+        catch {
             this.safeSend(socket, {
                 type: messages_1.INVALID_MOVE,
                 payload: { message: "Illegal move" },
@@ -159,7 +151,6 @@ class Game {
     handleDrawOffer(socket) {
         if (this.isOver)
             return;
-        // Can't offer draw to yourself twice in a row
         if (this.drawOfferedBy === socket)
             return;
         this.drawOfferedBy = socket;
@@ -171,7 +162,6 @@ class Game {
     handleDrawAccept(socket) {
         if (this.isOver)
             return;
-        // Only the opponent of the offerer can accept
         if (!this.drawOfferedBy || this.drawOfferedBy === socket)
             return;
         this.endGame({ winner: "draw", reason: "draw_agreement" });
@@ -190,13 +180,14 @@ class Game {
     handleDisconnect(socket) {
         if (this.isOver)
             return;
+        this.isOver = true;
         const winner = socket === this.player1 ? "black" : "white";
-        this.endGame({ winner, reason: "disconnect" });
-        // Also notify the remaining player specifically
-        this.safeSend(this.getOpponent(socket), {
+        const opponent = this.getOpponent(socket);
+        this.safeSend(opponent, {
             type: messages_1.OPPONENT_DISCONNECTED,
-            payload: {},
+            payload: { winner, reason: "disconnect" },
         });
+        console.log(`[${this.id}] ${this.getColor(socket)} disconnected, ${winner} wins`);
     }
 }
 exports.Game = Game;

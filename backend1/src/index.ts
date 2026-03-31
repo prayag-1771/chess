@@ -6,32 +6,32 @@ const PORT = parseInt(process.env["PORT"] || "8080", 10);
 const wss = new WebSocketServer({ port: PORT });
 const gameManager = new GameManager();
 
-console.log(`♟ Chess WebSocket server listening on port ${PORT}`);
+console.log(`Chess server listening on port ${PORT}`);
 
 wss.on("connection", (ws, req) => {
   const origin = req.headers.origin || "unknown";
-  console.log(`New connection from ${origin}`);
+  console.log(`connected: ${origin}`);
 
   gameManager.addUser(ws);
 
   ws.on("close", () => {
-    console.log(`Connection closed (origin: ${origin})`);
+    console.log(`disconnected: ${origin}`);
     gameManager.removeUser(ws);
   });
 
   ws.on("error", (err) => {
-    console.error(`WebSocket error: ${err.message}`);
+    console.error(`ws error: ${err.message}`);
     gameManager.removeUser(ws);
   });
 });
 
 wss.on("error", (err) => {
-  console.error(`Server error: ${err.message}`);
+  console.error(`server error: ${err.message}`);
 });
 
-// Graceful shutdown
 process.on("SIGINT", () => {
-  console.log("\nShutting down...");
+  console.log("\nshutting down...");
+  gameManager.stopHeartbeat();
   wss.close(() => {
     process.exit(0);
   });
