@@ -31,6 +31,8 @@ export const Game = () => {
   const [waitingForOpponent, setWaitingForOpponent] = useState(false)
   const [timeControl, setTimeControl] = useState('10+0')
   const [timeLeft, setTimeLeft] = useState<{ white: number, black: number } | null>(null)
+  const [pendingPromotion, setPendingPromotion] = useState<{ from: Square, to: Square } | null>(null)
+  const [confirmModal, setConfirmModal] = useState<'resign' | 'draw' | null>(null)
   
   const socket = useSocket()
   const playSound = useSound()
@@ -200,11 +202,23 @@ export const Game = () => {
         to: square,
       }
 
-      // Auto-promote to queen for pawn reaching the last rank
+      // Check if it is a pawn reaching the end rank
       if (selectedPiece && selectedPiece.type === 'p') {
         const toRank = square.charAt(1)
         if (toRank === '1' || toRank === '8') {
-          moveObj.promotion = 'q'
+          // Check if pseudo-legal by testing a queen promotion
+          try {
+            const clone = new Chess(chess.fen())
+            const res = clone.move({ from: selectedSquare, to: square, promotion: 'q' })
+            if (res) {
+              setPendingPromotion({ from: selectedSquare, to: square })
+              return
+            }
+          } catch {
+            setSelectedSquare(null)
+            setLegalMoves([])
+            return
+          }
         }
       }
 
@@ -231,14 +245,40 @@ export const Game = () => {
     }
   }, [started, socket, chess, color, selectedSquare, playSound, playMoveSound])
 
+  const handlePromotionSelect = useCallback((pieceType: string) => {
+    if (!pendingPromotion || !socket) return
+    const moveObj = {
+      from: pendingPromotion.from,
+      to: pendingPromotion.to,
+      promotion: pieceType,
+    }
+    try {
+      const result = chess.move(moveObj)
+      if (result) {
+        setLastMove({ from: result.from as Square, to: result.to as Square })
+        setBoard(chess.board())
+        playMoveSound(result, chess.inCheck())
+        socket.send(JSON.stringify({
+          type: MOVE,
+          move: moveObj,
+        }))
+      }
+    } catch {}
+    setPendingPromotion(null)
+    setSelectedSquare(null)
+    setLegalMoves([])
+  }, [pendingPromotion, chess, socket, playMoveSound])
+
   const handleResign = useCallback(() => {
     if (!started || !socket) return
     socket.send(JSON.stringify({ type: RESIGN }))
+    setConfirmModal(null)
   }, [started, socket])
 
   const handleDrawOffer = useCallback(() => {
     if (!started || !socket) return
     socket.send(JSON.stringify({ type: DRAW_OFFER }))
+    setConfirmModal(null)
   }, [started, socket])
 
   const handleDrawAccept = useCallback(() => {
@@ -298,6 +338,46 @@ export const Game = () => {
           checkSquare={checkSquare}
           isCheckmate={isCheckmate}
         />
+
+        {/* Promotion Picker Modal */}
+        {pendingPromotion && (
+          <div className="modal-overlay">
+            <div className="promotion-modal">
+              <p>Promote Pawn</p>
+              <div className="promo-buttons">
+                {['q', 'r', 'b', 'n'].map(p => (
+                  <button key={p} className="btn-promo" onClick={() => handlePromotionSelect(p)}>
+                    {color === 'white' 
+                      ? (p === 'q' ? '♕' : p === 'r' ? '♖' : p === 'b' ? '♗' : '♘')
+                      : (p === 'q' ? '♛' : p === 'r' ? '♜' : p === 'b' ? '♝' : '♞')}
+                  </button>
+                ))}
+              </div>
+              <button className="btn-cancel" onClick={() => {
+                setPendingPromotion(null);
+                setSelectedSquare(null);
+                setLegalMoves([]);
+              }}>Cancel</button>
+            </div>
+          </div>
+        )}
+
+        {/* Confirm Modal for Resign / Draw */}
+        {confirmModal && (
+          <div className="modal-overlay">
+            <div className="confirm-modal">
+              <p>{confirmModal === 'resign' ? 'Are you sure you want to resign?' : 'Offer a draw to your opponent?'}</p>
+              <div className="confirm-buttons">
+                <button className="btn-accept" onClick={confirmModal === 'resign' ? handleResign : handleDrawOffer}>
+                  Yes
+                </button>
+                <button className="btn-decline" onClick={() => setConfirmModal(null)}>
+                  No
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <aside className="game-panel">
@@ -425,10 +505,10 @@ export const Game = () => {
 
             {/* Action buttons */}
             <div className="game-actions">
-              <button className="btn-action btn-draw" onClick={handleDrawOffer} title="Offer Draw">
+              <button className="btn-action btn-draw" onClick={() => setConfirmModal('draw')} title="Offer Draw">
                 🤝 Draw
               </button>
-              <button className="btn-action btn-resign" onClick={handleResign} title="Resign">
+              <button className="btn-action btn-resign" onClick={() => setConfirmModal('resign')} title="Resign">
                 🏳️ Resign
               </button>
             </div>
