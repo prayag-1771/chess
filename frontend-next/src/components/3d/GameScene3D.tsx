@@ -105,10 +105,23 @@ function SceneLights() {
         decay={1.8}
         castShadow
       />
-      <ambientLight intensity={0.08} color="#2A1B0E" />
-      <hemisphereLight args={['#201005', '#080502', 0.15]} />
+      <ambientLight intensity={0.25} color="#FFE8C8" />
+      <hemisphereLight args={['#302010', '#080502', 0.3]} />
+      
+      {/* Focused Spotlight on the Board - The "High King's Light" */}
+      <spotLight
+        position={[0, 10, 0]}
+        angle={0.6}
+        penumbra={0.8}
+        intensity={200}
+        color="#FFF5E0"
+        castShadow
+        shadow-mapSize={[1024, 1024]}
+        shadow-bias={-0.0001}
+      />
+      
       {/* Subtle floor bounce */}
-      <pointLight position={[0, -0.5, 0]} intensity={0.4} color="#8B4513" distance={10} />
+      <pointLight position={[0, -0.5, 0]} intensity={0.6} color="#8B4513" distance={10} />
     </>
   )
 }
@@ -131,9 +144,9 @@ function MedievalRoom() {
         <meshStandardMaterial color={floorColor} roughness={1} />
       </mesh>
 
-      {/* Medieval Pillars */}
+      {/* Medieval Pillars - No shadows on the board */}
       {[[-12, -12], [12, -12], [-12, 12], [12, 12]].map(([px, pz], i) => (
-        <mesh key={i} position={[px, 9, pz]} castShadow receiveShadow>
+        <mesh key={i} position={[px, 9, pz]} receiveShadow>
           <cylinderGeometry args={[1.5, 2.5, 20, 16]} />
           <meshStandardMaterial color={stoneColor} roughness={0.8} />
         </mesh>
@@ -193,7 +206,7 @@ export function GameScene3D({
       gl={{
         antialias: true,
         toneMapping: THREE.ACESFilmicToneMapping,
-        toneMappingExposure: 0.95,
+        toneMappingExposure: 1.3,
         outputColorSpace: THREE.SRGBColorSpace,
       }}
       style={{ width: '100%', height: '100%', background: '#080502' }}

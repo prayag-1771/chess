@@ -5,14 +5,14 @@ import * as THREE from 'three'
 import type { Color, PieceSymbol, Square } from 'chess.js'
 import { ChessPiece } from './ChessPieces'
 
-const LIGHT_SQUARE = '#3C2A1A' // Deep Oak
-const DARK_SQUARE = '#0E0906'  // Charred Iron
-const SELECTED_SQUARE = '#D4AF37' // Golden Highlight
-const LAST_MOVE_LIGHT = '#6B583A'
-const LAST_MOVE_DARK = '#40352A'
-const LEGAL_MOVE_COLOR = '#F6F669'
-const LEGAL_CAPTURE_COLOR = '#FF4500' // Burning Orange for capture
-const FRAME_COLOR = '#0A0705'  // Obsidian Frame
+const LIGHT_SQUARE = '#5D4037' // Rich Polished Oak
+const DARK_SQUARE = '#1A110E'  // Aged Basalt
+const SELECTED_SQUARE = '#FFD700' // Gold Luster
+const LAST_MOVE_LIGHT = '#8D7B5D'
+const LAST_MOVE_DARK = '#4A3E38'
+const LEGAL_MOVE_COLOR = '#FFFF00'
+const LEGAL_CAPTURE_COLOR = '#FF3300'
+const FRAME_COLOR = '#0D0907'
 
 interface BoardSquare {
   square: Square
