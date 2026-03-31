@@ -66,28 +66,94 @@ function FloatingDust() {
 }
 
 function SceneLights() {
+  const torchLight1 = useRef<THREE.PointLight>(null)
+  const torchLight2 = useRef<THREE.PointLight>(null)
+
+  useFrame(({ clock }) => {
+    if (torchLight1.current) {
+      torchLight1.current.intensity = 15 + Math.sin(clock.elapsedTime * 12) * 4
+    }
+    if (torchLight2.current) {
+      torchLight2.current.intensity = 15 + Math.cos(clock.elapsedTime * 10) * 4
+    }
+  })
+
   return (
     <>
+      {/* Dramatic Moonlight from high window */}
       <directionalLight
-        position={[5, 12, 8]}
-        intensity={2.2}
-        color="#FFF5E0"
+        position={[-15, 20, 15]}
+        intensity={0.8}
+        color="#A5C9FF"
         castShadow
         shadow-mapSize={[2048, 2048]}
-        shadow-camera-near={0.5}
-        shadow-camera-far={50}
-        shadow-camera-left={-10}
-        shadow-camera-right={10}
-        shadow-camera-top={10}
-        shadow-camera-bottom={-10}
-        shadow-bias={-0.0005}
       />
-      <directionalLight position={[-6, 8, -4]} intensity={0.6} color="#B0C8E8" />
-      <directionalLight position={[0, 4, -10]} intensity={0.4} color="#E8D0FF" />
-      <ambientLight intensity={0.35} color="#FFE8C8" />
-      <hemisphereLight args={['#1A0A00', '#3D2B1F', 0.3]} />
-      <pointLight position={[0, -2, 0]} intensity={0.8} color="#8B4513" distance={8} decay={2} />
+      {/* Warm Torchlight / Candle flicker from sides */}
+      <pointLight
+        ref={torchLight1}
+        position={[8, 4, 8]}
+        color="#FF8C00"
+        distance={25}
+        decay={1.8}
+        castShadow
+      />
+      <pointLight
+        ref={torchLight2}
+        position={[-8, 4, -8]}
+        color="#FF4500"
+        distance={25}
+        decay={1.8}
+        castShadow
+      />
+      <ambientLight intensity={0.08} color="#2A1B0E" />
+      <hemisphereLight args={['#201005', '#080502', 0.15]} />
+      {/* Subtle floor bounce */}
+      <pointLight position={[0, -0.5, 0]} intensity={0.4} color="#8B4513" distance={10} />
     </>
+  )
+}
+
+function MedievalRoom() {
+  const stoneColor = "#2a2a2a"
+  const floorColor = "#1a1a1a"
+  
+  return (
+    <group position={[0, -0.2, 0]}>
+      {/* Large Stone Table or Base for the board */}
+      <mesh position={[0, -0.4, 0]} receiveShadow>
+        <cylinderGeometry args={[6.5, 7.5, 0.8, 32]} />
+        <meshStandardMaterial color={stoneColor} roughness={0.9} metalness={0.1} />
+      </mesh>
+      
+      {/* Floor */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.85, 0]} receiveShadow>
+        <planeGeometry args={[100, 100]} />
+        <meshStandardMaterial color={floorColor} roughness={1} />
+      </mesh>
+
+      {/* Medieval Pillars */}
+      {[[-12, -12], [12, -12], [-12, 12], [12, 12]].map(([px, pz], i) => (
+        <mesh key={i} position={[px, 9, pz]} castShadow receiveShadow>
+          <cylinderGeometry args={[1.5, 2.5, 20, 16]} />
+          <meshStandardMaterial color={stoneColor} roughness={0.8} />
+        </mesh>
+      ))}
+
+      {/* Floating Torches on Pillars */}
+      {[[-9.5, 4.5, -9.5], [9.5, 4.5, 9.5]].map((pos, i) => (
+        <group key={i} position={pos as [number, number, number]}>
+          <mesh>
+            <cylinderGeometry args={[0.05, 0.05, 1, 8]} />
+            <meshStandardMaterial color="#443322" />
+          </mesh>
+          <mesh position={[0, 0.5, 0]}>
+            <sphereGeometry args={[0.15, 8, 8]} />
+            <meshBasicMaterial color="#FF4500" />
+            <pointLight intensity={10} distance={15} color="#FF8C00" />
+          </mesh>
+        </group>
+      ))}
+    </group>
   )
 }
 
@@ -111,7 +177,8 @@ export function GameScene3D({
   isCheckmate,
 }: GameScene3DProps) {
   const cameraY = 8
-  const cameraZ = color === 'black' ? -9 : 9
+  const cameraZ = 9 // Constant Z, board rotation handles orientation
+
 
   return (
     <Canvas
@@ -121,21 +188,23 @@ export function GameScene3D({
         position: [0, cameraY, cameraZ],
         fov: 45,
         near: 0.1,
-        far: 100,
+        far: 200,
       }}
       gl={{
         antialias: true,
         toneMapping: THREE.ACESFilmicToneMapping,
-        toneMappingExposure: 1.1,
+        toneMappingExposure: 0.95,
         outputColorSpace: THREE.SRGBColorSpace,
       }}
-      style={{ width: '100%', height: '100%', background: 'transparent' }}
+      style={{ width: '100%', height: '100%', background: '#080502' }}
     >
+      <fog attach="fog" args={['#080502', 10, 50]} />
       <Suspense fallback={<LoadingFallback />}>
-        <Environment preset="studio" environmentIntensity={0.4} />
+        {/* Dark Environment */}
+        <Environment preset="night" environmentIntensity={0.05} />
 
         <SceneLights />
-
+        <MedievalRoom />
         <FloatingDust />
 
         <ChessBoard3D

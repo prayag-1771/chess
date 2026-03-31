@@ -149,21 +149,21 @@ function mergeIndices(indices: THREE.BufferAttribute[], counts: number[]): THREE
 }
 
 const WHITE_MATERIAL_PROPS = {
-  color: '#F5EDE0',
-  metalness: 0.06,
-  roughness: 0.28,
-  envMapIntensity: 0.7,
-  clearcoat: 0.3,
-  clearcoatRoughness: 0.4,
+  color: '#FAF4E8', // Polished Ivory
+  metalness: 0.1,
+  roughness: 0.22,
+  envMapIntensity: 1.2,
+  clearcoat: 0.4,
+  clearcoatRoughness: 0.3,
 }
 
 const BLACK_MATERIAL_PROPS = {
-  color: '#1A1A1A',
-  metalness: 0.2,
-  roughness: 0.18,
-  envMapIntensity: 1.0,
-  clearcoat: 0.5,
-  clearcoatRoughness: 0.2,
+  color: '#080706', // Blackened Iron
+  metalness: 0.5,
+  roughness: 0.12,
+  envMapIntensity: 1.5,
+  clearcoat: 0.8,
+  clearcoatRoughness: 0.15,
 }
 
 const PIECE_SCALE: Record<string, number> = {

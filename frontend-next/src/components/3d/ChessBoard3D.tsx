@@ -5,14 +5,14 @@ import * as THREE from 'three'
 import type { Color, PieceSymbol, Square } from 'chess.js'
 import { ChessPiece } from './ChessPieces'
 
-const LIGHT_SQUARE = '#E8D5B5'
-const DARK_SQUARE = '#B58863'
-const SELECTED_SQUARE = '#F6F669'
-const LAST_MOVE_LIGHT = '#CDD26A'
-const LAST_MOVE_DARK = '#AAA23A'
-const LEGAL_MOVE_COLOR = '#4A4A4A'
-const LEGAL_CAPTURE_COLOR = '#CC3333'
-const FRAME_COLOR = '#3D2B1F'
+const LIGHT_SQUARE = '#3C2A1A' // Deep Oak
+const DARK_SQUARE = '#0E0906'  // Charred Iron
+const SELECTED_SQUARE = '#D4AF37' // Golden Highlight
+const LAST_MOVE_LIGHT = '#6B583A'
+const LAST_MOVE_DARK = '#40352A'
+const LEGAL_MOVE_COLOR = '#F6F669'
+const LEGAL_CAPTURE_COLOR = '#FF4500' // Burning Orange for capture
+const FRAME_COLOR = '#0A0705'  // Obsidian Frame
 
 interface BoardSquare {
   square: Square
@@ -119,26 +119,26 @@ function BoardSquares({
             </mesh>
 
             {isLegalMove && !hasPiece && (
-              <mesh position={[x, 0.008, z]} rotation={[-Math.PI / 2, 0, 0]}>
-                <circleGeometry args={[0.16, 20]} />
-                <meshStandardMaterial
+              <mesh position={[x, 0.012, z]} rotation={[-Math.PI / 2, 0, 0]}>
+                <circleGeometry args={[0.18, 32]} />
+                <meshBasicMaterial
                   color={LEGAL_MOVE_COLOR}
                   transparent
-                  opacity={0.5}
-                  roughness={0.6}
+                  opacity={0.8}
                 />
+                <pointLight intensity={0.5} distance={1} color={LEGAL_MOVE_COLOR} position={[0,0,0.1]} />
               </mesh>
             )}
 
             {isLegalMove && hasPiece && (
-              <mesh position={[x, 0.008, z]} rotation={[-Math.PI / 2, 0, 0]}>
-                <ringGeometry args={[0.40, 0.50, 24]} />
-                <meshStandardMaterial
+              <mesh position={[x, 0.012, z]} rotation={[-Math.PI / 2, 0, 0]}>
+                <ringGeometry args={[0.35, 0.45, 32]} />
+                <meshBasicMaterial
                   color={LEGAL_CAPTURE_COLOR}
                   transparent
-                  opacity={0.6}
-                  roughness={0.5}
+                  opacity={0.8}
                 />
+                <pointLight intensity={1} distance={1.5} color={LEGAL_CAPTURE_COLOR} position={[0,0,0.1]} />
               </mesh>
             )}
 
