@@ -327,13 +327,21 @@ export class GameManager {
 
   private handleChat(socket: WebSocket, message: any): void {
     const game = this.socketToGame.get(socket);
-    if (!game) return;
+    if (!game) {
+      console.log("[Chat] No game found for socket");
+      return;
+    }
 
     const text = message.payload?.text;
-    if (typeof text !== "string" || text.trim().length === 0 || text.length > 500) return;
+    if (typeof text !== "string" || text.trim().length === 0 || text.length > 500) {
+      console.log("[Chat] Invalid text:", text);
+      return;
+    }
 
     const opponent = socket === game.player1 ? game.player2 : game.player1;
     const sender = socket === game.player1 ? "player1" : "player2";
+
+    console.log(`[Chat] ${sender} says: "${text.trim()}" -> relaying to opponent`);
 
     this.safeSend(opponent, {
       type: CHAT,
