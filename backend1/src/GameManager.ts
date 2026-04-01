@@ -6,6 +6,7 @@ import {
   DRAW_OFFER,
   DRAW_ACCEPT,
   DRAW_DECLINE,
+  CHAT,
   ERROR,
   WAITING,
 } from "./messages";
@@ -173,6 +174,9 @@ export class GameManager {
         case DRAW_DECLINE:
           this.handleDrawDecline(socket);
           break;
+        case CHAT:
+          this.handleChat(socket, message);
+          break;
         default:
           this.safeSend(socket, {
             type: ERROR,
@@ -319,5 +323,21 @@ export class GameManager {
     if (!game) return;
 
     game.handleDrawDecline(socket);
+  }
+
+  private handleChat(socket: WebSocket, message: any): void {
+    const game = this.socketToGame.get(socket);
+    if (!game) return;
+
+    const text = message.payload?.text;
+    if (typeof text !== "string" || text.trim().length === 0 || text.length > 500) return;
+
+    const opponent = socket === game.player1 ? game.player2 : game.player1;
+    const sender = socket === game.player1 ? "player1" : "player2";
+
+    this.safeSend(opponent, {
+      type: CHAT,
+      payload: { text: text.trim(), sender },
+    });
   }
 }

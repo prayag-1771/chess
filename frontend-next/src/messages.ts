@@ -11,3 +11,4 @@ export const ERROR = "error";
 export const OPPONENT_DISCONNECTED = "opponent_disconnected";
 export const WAITING = "waiting";
 export const INVALID_MOVE = "invalid_move";
+export const CHAT = "chat";

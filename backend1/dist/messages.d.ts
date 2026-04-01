@@ -9,3 +9,4 @@ export declare const ERROR = "error";
 export declare const OPPONENT_DISCONNECTED = "opponent_disconnected";
 export declare const WAITING = "waiting";
 export declare const INVALID_MOVE = "invalid_move";
+export declare const CHAT = "chat";

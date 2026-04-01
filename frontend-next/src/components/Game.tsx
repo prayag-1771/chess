@@ -4,9 +4,9 @@ import { useSocket } from '../hooks/useSocket'
 import {
   INIT_GAME, MOVE, GAME_OVER,
   RESIGN, DRAW_OFFER, DRAW_ACCEPT, DRAW_DECLINE,
-  OPPONENT_DISCONNECTED, WAITING, INVALID_MOVE
+  OPPONENT_DISCONNECTED, WAITING, INVALID_MOVE, CHAT
 } from '../messages'
-import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { Chess } from 'chess.js'
 import type { Square, Move } from 'chess.js'
 import { GameScene3D } from './3d/GameScene3D'
@@ -37,7 +37,12 @@ export const Game = () => {
   const [roomUrl, setRoomUrl] = useState('')
   const [reviewMode, setReviewMode] = useState(false)
   const [replayIndex, setReplayIndex] = useState<number>(0)
-  
+  const [chatMessages, setChatMessages] = useState<{ text: string; from: 'me' | 'opponent' }[]>([])
+  const [chatInput, setChatInput] = useState('')
+  const [activeTab, setActiveTab] = useState<'game' | 'chat'>('game')
+  const [unreadChat, setUnreadChat] = useState(0)
+  const chatEndRef = useRef<HTMLDivElement>(null)
+
   const socket = useSocket()
   const playSound = useSound()
 
@@ -150,6 +155,15 @@ export const Game = () => {
         case DRAW_DECLINE:
           setDrawOffered(false)
           break
+
+        case CHAT: {
+          const chatText = message.payload?.text
+          if (chatText) {
+            setChatMessages(prev => [...prev, { text: chatText, from: 'opponent' }])
+            setUnreadChat(prev => prev + 1)
+          }
+          break
+        }
 
         default:
           break
@@ -334,6 +348,22 @@ export const Game = () => {
     setDrawOffered(false)
   }, [socket])
 
+  const sendChat = useCallback(() => {
+    if (!socket || !chatInput.trim()) return
+    const text = chatInput.trim()
+    socket.send(JSON.stringify({ type: CHAT, payload: { text } }))
+    setChatMessages(prev => [...prev, { text, from: 'me' }])
+    setChatInput('')
+  }, [socket, chatInput])
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [chatMessages])
+
+  useEffect(() => {
+    if (activeTab === 'chat') setUnreadChat(0)
+  }, [activeTab, chatMessages])
+
   const handlePlayAgain = useCallback(() => {
     chess.reset()
     setBoard(chess.board())
@@ -345,6 +375,9 @@ export const Game = () => {
     setDrawOffered(false)
     setColor(null)
     setReviewMode(false)
+    setChatMessages([])
+    setUnreadChat(0)
+    setActiveTab('game')
   }, [chess])
 
   const displayBoard = useMemo(() => {
@@ -443,9 +476,24 @@ export const Game = () => {
       </div>
 
       <aside className="game-panel">
-        <div className="panel-logo">
-          <span className="logo-icon">♟</span>
-          <span className="logo-text">Chess 3D</span>
+        <div className="panel-header">
+          <div className="panel-logo">
+            <span className="logo-icon">♟</span>
+            <span className="logo-text">Chess 3D</span>
+          </div>
+          {(started || reviewMode) && (
+            <div className="panel-tabs">
+              <button className={`panel-tab ${activeTab === 'game' ? 'active' : ''}`} onClick={() => setActiveTab('game')}>
+                Game
+              </button>
+              <button className={`panel-tab ${activeTab === 'chat' ? 'active' : ''}`} onClick={() => setActiveTab('chat')}>
+                Chat
+                {unreadChat > 0 && activeTab !== 'chat' && (
+                  <span className="chat-badge">{unreadChat}</span>
+                )}
+              </button>
+            </div>
+          )}
         </div>
 
         {!socket && (
@@ -461,13 +509,13 @@ export const Game = () => {
               <>
                 <p className="lobby-title game-result">
                   {gameResult.winner === 'draw'
-                    ? '🤝 Draw'
+                    ? 'Draw'
                     : gameResult.winner === color
-                    ? '🏆 You Win!'
-                    : '😞 You Lost'}
+                    ? 'You Win!'
+                    : 'You Lost'}
                 </p>
                 <p className="lobby-sub">{formatReason(gameResult.reason)}</p>
-                <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
+                <div className="result-actions">
                   <button
                     id="btn-play-again"
                     className="btn-play"
@@ -476,14 +524,13 @@ export const Game = () => {
                       socket.send(JSON.stringify({ type: INIT_GAME, payload: { timeControl } }))
                     }}
                   >
-                    <span>🔄</span> Play
+                    New Game
                   </button>
-                  <button 
-                    className="btn-play" 
-                    style={{ background: 'var(--clr-surface)' }} 
+                  <button
+                    className="btn-play btn-review"
                     onClick={() => setReviewMode(true)}
                   >
-                    <span>🔍</span> Review
+                    Review
                   </button>
                 </div>
               </>
@@ -494,24 +541,24 @@ export const Game = () => {
                 <div className="searching-spinner" />
                 {roomUrl && (
                   <div className="room-share">
-                    <p style={{marginTop: 8, fontSize: '0.9rem', color: '#B58863'}}>Share link with friend:</p>
-                    <input 
-                      type="text" 
+                    <p className="room-share-label">Share link with friend:</p>
+                    <input
+                      type="text"
                       className="room-share-input"
-                      readOnly 
-                      value={roomUrl} 
-                      onClick={e => (e.target as HTMLInputElement).select()} 
+                      readOnly
+                      value={roomUrl}
+                      onClick={e => (e.target as HTMLInputElement).select()}
                     />
                   </div>
                 )}
               </>
             ) : (
               <>
-                <p className="lobby-title">Find a Match</p>
-                <p className="lobby-sub">Select a time control</p>
+                <p className="lobby-title">New Game</p>
+                <p className="lobby-sub">Select time control</p>
                 <div className="time-controls">
                   {['3+2', '5+0', '10+0'].map(tc => (
-                    <button 
+                    <button
                       key={tc}
                       className={`btn-time ${timeControl === tc ? 'active' : ''}`}
                       onClick={() => setTimeControl(tc)}
@@ -528,18 +575,18 @@ export const Game = () => {
                     socket.send(JSON.stringify({ type: INIT_GAME, payload: { timeControl } }))
                   }}
                 >
-                  <span>▶</span> Play Online
+                  Play
                 </button>
 
                 <div className="room-controls">
-                  <span className="room-divider">— or —</span>
+                  <span className="room-divider">or play a friend</span>
                   <div className="room-flex">
-                    <input 
-                      type="text" 
-                      className="room-input" 
-                      placeholder="Room Code" 
-                      value={roomIdInput} 
-                      onChange={(e) => setRoomIdInput(e.target.value)} 
+                    <input
+                      type="text"
+                      className="room-input"
+                      placeholder="Room Code"
+                      value={roomIdInput}
+                      onChange={(e) => setRoomIdInput(e.target.value)}
                     />
                     <button className="btn-room" onClick={handleJoinRoom} disabled={!roomIdInput}>
                       Join
@@ -555,47 +602,64 @@ export const Game = () => {
           </div>
         )}
 
-        {(started || reviewMode) && (
+        {(started || reviewMode) && activeTab === 'game' && (
           <div className="panel-game-info">
-            <div className="player-badge">
-              <span className={`piece-dot ${color === 'white' ? 'dot-white' : 'dot-black'}`} />
-              <div className="player-badge-info">
-                <span>You play <strong>{color === 'white' ? 'White' : 'Black'}</strong></span>
-                {timeLeft && (
-                  <span className="clock">
-                    {formatTime(color === 'white' ? timeLeft.white : timeLeft.black)}
-                  </span>
-                )}
+            {/* Opponent clock + badge on top */}
+            <div className="player-card">
+              <div className="player-card-left">
+                <span className={`piece-dot ${color === 'white' ? 'dot-black' : 'dot-white'}`} />
+                <span className="player-name">Opponent</span>
               </div>
+              {timeLeft && (
+                <span className={`clock ${!isMyTurn ? 'clock-active' : ''}`}>
+                  {formatTime(color === 'black' ? timeLeft.white : timeLeft.black)}
+                </span>
+              )}
             </div>
-            <div className="player-badge">
-              <span className={`piece-dot ${color === 'white' ? 'dot-black' : 'dot-white'}`} />
-              <div className="player-badge-info">
-                <span>Opponent</span>
-                {timeLeft && (
-                  <span className="clock">
-                    {formatTime(color === 'black' ? timeLeft.white : timeLeft.black)}
-                  </span>
+
+            {/* Move History */}
+            <div className="move-history-panel">
+              <div className="move-history-list">
+                {chess.history().length === 0 && (
+                  <div className="moves-empty">No moves yet</div>
                 )}
+                {chess.history().reduce((result, value, index, array) => {
+                  if (index % 2 === 0) {
+                    result.push(array.slice(index, index + 2));
+                  }
+                  return result;
+                }, [] as string[][]).map((pair, i) => (
+                  <div key={i} className="move-row">
+                    <span className="move-number">{i + 1}.</span>
+                    <span className={`move-white ${reviewMode && replayIndex === i * 2 + 1 ? 'active-move' : ''}`}>{pair[0]}</span>
+                    <span className={`move-black ${reviewMode && replayIndex === i * 2 + 2 ? 'active-move' : ''}`}>{pair[1] || ''}</span>
+                  </div>
+                ))}
               </div>
             </div>
 
-            <div className={`turn-indicator ${isMyTurn ? 'your-turn' : 'their-turn'}`}>
+            {/* Your clock + badge on bottom */}
+            <div className="player-card">
+              <div className="player-card-left">
+                <span className={`piece-dot ${color === 'white' ? 'dot-white' : 'dot-black'}`} />
+                <span className="player-name">You ({color === 'white' ? 'White' : 'Black'})</span>
+              </div>
+              {timeLeft && (
+                <span className={`clock ${isMyTurn ? 'clock-active' : ''}`}>
+                  {formatTime(color === 'white' ? timeLeft.white : timeLeft.black)}
+                </span>
+              )}
+            </div>
+
+            {/* Status bar */}
+            <div className={`status-bar ${isMyTurn ? 'your-turn' : 'their-turn'}`}>
               {inCheck
-                ? <><span className="check-icon">⚠</span> Check!</>
+                ? 'Check!'
                 : isMyTurn
-                ? <><span className="turn-icon">⬤</span> Your turn</>
-                : <><span className="turn-icon dim">⬤</span> {currentTurn}&apos;s turn</>
+                ? 'Your turn'
+                : `${currentTurn}'s turn`
               }
             </div>
-
-            <p className="hint-text">Click a piece, then click its destination</p>
-
-            {selectedSquare && (
-              <div className="selected-info">
-                Selected <strong>{selectedSquare}</strong> — {legalMoves.length} legal move{legalMoves.length !== 1 ? 's' : ''}
-              </div>
-            )}
 
             {/* Draw offer received */}
             {drawOffered && !reviewMode && (
@@ -612,21 +676,21 @@ export const Game = () => {
             {!reviewMode ? (
               <div className="game-actions">
                 <button className="btn-action btn-draw" onClick={() => setConfirmModal('draw')} title="Offer Draw">
-                  🤝 Draw
+                  Draw
                 </button>
                 <button className="btn-action btn-resign" onClick={() => setConfirmModal('resign')} title="Resign">
-                  🏳️ Resign
+                  Resign
                 </button>
               </div>
             ) : (
-              <div className="replay-controls" style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
-                <div style={{ display: 'flex', gap: '4px' }}>
+              <div className="replay-controls">
+                <div className="replay-nav">
                   <button className="btn-action" onClick={() => setReplayIndex(0)}>|&lt;</button>
                   <button className="btn-action" onClick={() => setReplayIndex(i => Math.max(0, i - 1))}>&lt;</button>
                   <button className="btn-action" onClick={() => setReplayIndex(i => Math.min(chess.history().length, i + 1))}>&gt;</button>
                   <button className="btn-action" onClick={() => setReplayIndex(chess.history().length)}>&gt;|</button>
                 </div>
-                <div style={{ display: 'flex', gap: '8px' }}>
+                <div className="replay-extra">
                   <button className="btn-action" onClick={() => {
                     const blob = new Blob([chess.pgn()], { type: "text/plain;charset=utf-8" })
                     const url = URL.createObjectURL(blob)
@@ -634,33 +698,41 @@ export const Game = () => {
                     a.href = url
                     a.download = "game.pgn"
                     a.click()
-                  }}>📥 PGN</button>
+                  }}>Export PGN</button>
                   <button className="btn-action" onClick={() => setReviewMode(false)}>Exit Review</button>
                 </div>
               </div>
             )}
+          </div>
+        )}
 
-            {/* Move History Panel */}
-            <div className="move-history-panel">
-              <h4 className="move-history-title">Move History</h4>
-              <div className="move-history-list">
-                {chess.history().reduce((result, value, index, array) => {
-                  if (index % 2 === 0) {
-                    result.push(array.slice(index, index + 2));
-                  }
-                  return result;
-                }, [] as string[][]).map((pair, i) => (
-                  <div key={i} className="move-row">
-                    <span className="move-number">{i + 1}.</span>
-                    <span className={`move-white ${reviewMode && replayIndex === i * 2 + 1 ? 'active-move' : ''}`}>{pair[0]}</span>
-                    <span className={`move-black ${reviewMode && replayIndex === i * 2 + 2 ? 'active-move' : ''}`}>{pair[1] || ''}</span>
-                  </div>
-                ))}
-              </div>
+        {(started || reviewMode) && activeTab === 'chat' && (
+          <div className="chat-panel">
+            <div className="chat-messages">
+              {chatMessages.length === 0 && (
+                <div className="chat-empty">No messages yet. Say hello!</div>
+              )}
+              {chatMessages.map((msg, i) => (
+                <div key={i} className={`chat-msg ${msg.from === 'me' ? 'chat-msg-me' : 'chat-msg-opp'}`}>
+                  <span className="chat-msg-label">{msg.from === 'me' ? 'You' : 'Opponent'}</span>
+                  <span className="chat-msg-text">{msg.text}</span>
+                </div>
+              ))}
+              <div ref={chatEndRef} />
             </div>
-
-            <div className="camera-tip">
-              <span>🖱</span> Drag to orbit · Scroll to zoom
+            <div className="chat-input-bar">
+              <input
+                type="text"
+                className="chat-input"
+                placeholder="Send a message…"
+                value={chatInput}
+                onChange={e => setChatInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') sendChat() }}
+                maxLength={500}
+              />
+              <button className="chat-send-btn" onClick={sendChat} disabled={!chatInput.trim()}>
+                Send
+              </button>
             </div>
           </div>
         )}

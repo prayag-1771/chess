@@ -23,4 +23,5 @@ export declare class GameManager {
     private handleDrawOffer;
     private handleDrawAccept;
     private handleDrawDecline;
+    private handleChat;
 }

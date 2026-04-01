@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.INVALID_MOVE = exports.WAITING = exports.OPPONENT_DISCONNECTED = exports.ERROR = exports.DRAW_DECLINE = exports.DRAW_ACCEPT = exports.DRAW_OFFER = exports.RESIGN = exports.GAME_OVER = exports.MOVE = exports.INIT_GAME = void 0;
+exports.CHAT = exports.INVALID_MOVE = exports.WAITING = exports.OPPONENT_DISCONNECTED = exports.ERROR = exports.DRAW_DECLINE = exports.DRAW_ACCEPT = exports.DRAW_OFFER = exports.RESIGN = exports.GAME_OVER = exports.MOVE = exports.INIT_GAME = void 0;
 exports.INIT_GAME = "init_game";
 exports.MOVE = "move";
 exports.GAME_OVER = "game_over";
@@ -12,4 +12,5 @@ exports.ERROR = "error";
 exports.OPPONENT_DISCONNECTED = "opponent_disconnected";
 exports.WAITING = "waiting";
 exports.INVALID_MOVE = "invalid_move";
+exports.CHAT = "chat";
 //# sourceMappingURL=messages.js.map
