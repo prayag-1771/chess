@@ -147,7 +147,7 @@ function mergeIndices(indices: THREE.BufferAttribute[], counts: number[]): THREE
 }
 
 const WHITE_MATERIAL_PROPS = {
-  color: '#FAF4E8', // Polished Ivory
+  color: '#FAF4E8',
   metalness: 0.1,
   roughness: 0.22,
   envMapIntensity: 1.2,
@@ -156,7 +156,7 @@ const WHITE_MATERIAL_PROPS = {
 }
 
 const BLACK_MATERIAL_PROPS = {
-  color: '#121212', // Blackstone / Aged Iron
+  color: '#121212',
   metalness: 0.5,
   roughness: 0.12,
   envMapIntensity: 1.5,
@@ -293,7 +293,7 @@ export function ChessPiece({ type, pieceColor, position, targetPosition, selecte
           />
         )}
       </group>
-      {/* World-space (board-space) particle trail */}
+
       <TrailSystem isMoving={animating.current} positionVec={currentPos.current} active={targetPosition[0] !== position[0] || targetPosition[2] !== position[2]} />
     </>
   )
@@ -307,11 +307,9 @@ function TrailSystem({ isMoving, positionVec, active }: { isMoving: boolean; pos
   useFrame((_, delta) => {
     if (!meshRef.current) return
     
-    // Spawn particles if moving
     if (isMoving && active) {
-      // Spawn 2 particles per frame
       for (let i = 0; i < 2; i++) {
-        if (particles.current.length > 40) break // limit spawn
+        if (particles.current.length > 40) break
         particles.current.push({
           pos: positionVec.clone().add(new THREE.Vector3(
             (Math.random() - 0.5) * 0.3, 
@@ -325,17 +323,16 @@ function TrailSystem({ isMoving, positionVec, active }: { isMoving: boolean; pos
       }
     }
     
-    // Update particles if any exist
     if (particles.current.length > 0) {
       particles.current.forEach(p => {
         p.age += delta
-        p.pos.y += delta * 0.2 // float up slightly
+        p.pos.y += delta * 0.2
       })
       
       particles.current = particles.current.filter(p => p.age < p.maxAge)
       
       particles.current.forEach((p, i) => {
-        if (i >= 50) return // max instances
+        if (i >= 50) return
         dummy.current.position.copy(p.pos)
         const scale = 1 - (p.age / p.maxAge)
         dummy.current.scale.set(scale, scale, scale)
@@ -343,7 +340,6 @@ function TrailSystem({ isMoving, positionVec, active }: { isMoving: boolean; pos
         meshRef.current!.setMatrixAt(i, dummy.current.matrix)
       })
       
-      // Clear unused instances
       for (let i = particles.current.length; i < 50; i++) {
         dummy.current.scale.set(0, 0, 0)
         dummy.current.updateMatrix()

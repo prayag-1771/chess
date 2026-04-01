@@ -103,7 +103,6 @@ export const Game = () => {
               playMoveSound(result, chess.inCheck())
             }
           } catch {
-            // ignore invalid moves from server
           }
           if (moveData.timeLeftMs) {
             setTimeLeft(moveData.timeLeftMs)
@@ -143,7 +142,6 @@ export const Game = () => {
           break
 
         case INVALID_MOVE:
-          // Undo the local move we optimistically made
           chess.undo()
           setBoard(chess.board())
           break
@@ -171,7 +169,6 @@ export const Game = () => {
     }
   }, [socket, chess, started, playSound, playMoveSound])
 
-  // Local timer tick
   useEffect(() => {
     if (!started || !timeLeft) return
     let lastTick = Date.now()
@@ -181,9 +178,6 @@ export const Game = () => {
       const delta = now - lastTick
       lastTick = now
 
-      // Turn logic: we only decrement the active player's clock if at least 1 move has been made
-      // White starts. If history length is 0, we can also wait until first move or tick white immediately. 
-      // Usually clock starts on first move, but for simplicity let's start it right away.
       const isWhiteTurn = chess.turn() === 'w'
       if (chess.history().length > 0) {
         setTimeLeft(prev => {
@@ -205,9 +199,7 @@ export const Game = () => {
     const piece = chess.get(square)
     const myColor = color === 'white' ? 'w' : 'b'
 
-    // If it's not my turn, don't allow moves
     if (chess.turn() !== myColor) {
-      // But allow selecting own pieces for inspection
       if (piece && piece.color === myColor) {
         playSound('pickup')
         setSelectedSquare(square)
@@ -226,18 +218,15 @@ export const Game = () => {
     }
 
     if (selectedSquare) {
-      // Build the move — include promotion if needed
       const selectedPiece = chess.get(selectedSquare)
       const moveObj: { from: string; to: string; promotion?: string } = {
         from: selectedSquare,
         to: square,
       }
 
-      // Check if it is a pawn reaching the end rank
       if (selectedPiece && selectedPiece.type === 'p') {
         const toRank = square.charAt(1)
         if (toRank === '1' || toRank === '8') {
-          // Check if pseudo-legal by testing a queen promotion
           try {
             const clone = new Chess(chess.fen())
             const res = clone.move({ from: selectedSquare, to: square, promotion: 'q' })
@@ -269,7 +258,6 @@ export const Game = () => {
           }))
         }
       } catch {
-        // illegal move — ignore
       }
       setSelectedSquare(null)
       setLegalMoves([])
@@ -434,7 +422,7 @@ export const Game = () => {
           isCheckmate={isCheckmate}
         />
 
-        {/* Promotion Picker Modal */}
+
         {pendingPromotion && (
           <div className="modal-overlay">
             <div className="promotion-modal">
@@ -457,7 +445,7 @@ export const Game = () => {
           </div>
         )}
 
-        {/* Confirm Modal for Resign / Draw */}
+
         {confirmModal && (
           <div className="modal-overlay">
             <div className="confirm-modal">
@@ -604,7 +592,7 @@ export const Game = () => {
 
         {(started || reviewMode) && activeTab === 'game' && (
           <div className="panel-game-info">
-            {/* Opponent clock + badge on top */}
+
             <div className="player-card">
               <div className="player-card-left">
                 <span className={`piece-dot ${color === 'white' ? 'dot-black' : 'dot-white'}`} />
@@ -617,7 +605,7 @@ export const Game = () => {
               )}
             </div>
 
-            {/* Move History */}
+
             <div className="move-history-panel">
               <div className="move-history-list">
                 {chess.history().length === 0 && (
@@ -638,7 +626,7 @@ export const Game = () => {
               </div>
             </div>
 
-            {/* Your clock + badge on bottom */}
+
             <div className="player-card">
               <div className="player-card-left">
                 <span className={`piece-dot ${color === 'white' ? 'dot-white' : 'dot-black'}`} />
@@ -651,7 +639,7 @@ export const Game = () => {
               )}
             </div>
 
-            {/* Status bar */}
+
             <div className={`status-bar ${isMyTurn ? 'your-turn' : 'their-turn'}`}>
               {inCheck
                 ? 'Check!'
@@ -661,7 +649,7 @@ export const Game = () => {
               }
             </div>
 
-            {/* Draw offer received */}
+
             {drawOffered && !reviewMode && (
               <div className="draw-offer-bar">
                 <p>Opponent offers a draw</p>
@@ -672,7 +660,7 @@ export const Game = () => {
               </div>
             )}
 
-            {/* Action buttons or Replay UI */}
+
             {!reviewMode ? (
               <div className="game-actions">
                 <button className="btn-action btn-draw" onClick={() => setConfirmModal('draw')} title="Offer Draw">

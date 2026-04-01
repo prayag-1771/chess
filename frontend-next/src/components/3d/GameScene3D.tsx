@@ -80,7 +80,7 @@ function SceneLights() {
 
   return (
     <>
-      {/* Dramatic Moonlight from high window */}
+
       <directionalLight
         position={[-15, 20, 15]}
         intensity={0.8}
@@ -88,7 +88,6 @@ function SceneLights() {
         castShadow
         shadow-mapSize={[2048, 2048]}
       />
-      {/* Warm Torchlight / Candle flicker from sides */}
       <pointLight
         ref={torchLight1}
         position={[8, 4, 8]}
@@ -108,7 +107,6 @@ function SceneLights() {
       <ambientLight intensity={0.25} color="#FFE8C8" />
       <hemisphereLight args={['#302010', '#080502', 0.3]} />
       
-      {/* Focused Spotlight on the Board - The "High King's Light" */}
       <spotLight
         position={[0, 10, 0]}
         angle={0.6}
@@ -120,7 +118,7 @@ function SceneLights() {
         shadow-bias={-0.0001}
       />
       
-      {/* Subtle floor bounce */}
+
       <pointLight position={[0, -0.5, 0]} intensity={0.6} color="#8B4513" distance={10} />
     </>
   )
@@ -132,19 +130,19 @@ function MedievalRoom() {
   
   return (
     <group position={[0, -0.2, 0]}>
-      {/* Large Stone Table or Base for the board */}
+
       <mesh position={[0, -0.4, 0]} receiveShadow>
         <cylinderGeometry args={[6.5, 7.5, 0.8, 32]} />
         <meshStandardMaterial color={stoneColor} roughness={0.9} metalness={0.1} />
       </mesh>
       
-      {/* Floor */}
+
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.85, 0]} receiveShadow>
         <planeGeometry args={[100, 100]} />
         <meshStandardMaterial color={floorColor} roughness={1} />
       </mesh>
 
-      {/* Medieval Pillars - No shadows on the board */}
+
       {[[-12, -12], [12, -12], [-12, 12], [12, 12]].map(([px, pz], i) => (
         <mesh key={i} position={[px, 9, pz]} receiveShadow>
           <cylinderGeometry args={[1.5, 2.5, 20, 16]} />
@@ -152,7 +150,7 @@ function MedievalRoom() {
         </mesh>
       ))}
 
-      {/* Floating Torches on Pillars */}
+
       {[[-9.5, 4.5, -9.5], [9.5, 4.5, 9.5]].map((pos, i) => (
         <group key={i} position={pos as [number, number, number]}>
           <mesh>
@@ -190,7 +188,7 @@ export function GameScene3D({
   isCheckmate,
 }: GameScene3DProps) {
   const cameraY = 8
-  const cameraZ = 9 // Constant Z, board rotation handles orientation
+  const cameraZ = 9 
 
 
   return (
@@ -213,7 +211,6 @@ export function GameScene3D({
     >
       <fog attach="fog" args={['#080502', 10, 50]} />
       <Suspense fallback={<LoadingFallback />}>
-        {/* Dark Environment */}
         <Environment preset="night" environmentIntensity={0.05} />
 
         <SceneLights />
@@ -262,20 +259,16 @@ export function GameScene3D({
 
 function CameraAnimations({ isCheck, isCheckmate, baseZ, baseY }: { isCheck: boolean, isCheckmate: boolean, baseZ: number, baseY: number }) {
   useFrame((state) => {
-    // Zoom and Slow-Mo on checkmate
     if (isCheckmate) {
       const targetZ = baseZ * 0.6
       const targetY = baseY * 0.5
       state.camera.position.z = THREE.MathUtils.lerp(state.camera.position.z, targetZ, 0.02)
       state.camera.position.y = THREE.MathUtils.lerp(state.camera.position.y, targetY, 0.02)
-      // We don't change 'makeDefault' OrbitControls target here because they fight 
-      // but simple lerp creates a nice dramatic slow zoom if OrbitControls isn't actively panning.
       state.camera.lookAt(0, 0, 0)
     } 
-    // Camera shake on check
     else if (isCheck) {
       if (!CameraAnimations.checkHandled) {
-        CameraAnimations.shakeTime = 0.5 // duration of shake
+        CameraAnimations.shakeTime = 0.5
         CameraAnimations.checkHandled = true
       }
     } else {
@@ -289,7 +282,6 @@ function CameraAnimations({ isCheck, isCheckmate, baseZ, baseY }: { isCheck: boo
       state.camera.position.z = baseZ + (Math.random() - 0.5) * shakeAmount
       CameraAnimations.shakeTime -= 0.016
     } else if (!isCheckmate) {
-      // gently return to base if not checkmate
       state.camera.position.x = THREE.MathUtils.lerp(state.camera.position.x, 0, 0.1)
       state.camera.position.y = THREE.MathUtils.lerp(state.camera.position.y, baseY, 0.1)
       state.camera.position.z = THREE.MathUtils.lerp(state.camera.position.z, baseZ, 0.1)

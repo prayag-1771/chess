@@ -3,7 +3,7 @@
 import { useCallback, useRef, useEffect } from 'react'
 
 const SOUND_URLS = {
-  pickup: 'https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/move-self.mp3', // Placeholder for "pickup"
+  pickup: 'https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/move-self.mp3',
   place: 'https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/move-self.mp3',
   capture: 'https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/capture.mp3',
   check: 'https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/check.mp3',
@@ -18,7 +18,6 @@ export const useSound = () => {
   const audios = useRef<{ [key in SoundType]?: HTMLAudioElement }>({})
 
   useEffect(() => {
-    // Preload sounds
     Object.entries(SOUND_URLS).forEach(([key, url]) => {
       const audio = new Audio(url)
       audio.preload = 'auto'

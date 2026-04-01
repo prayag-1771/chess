@@ -155,10 +155,9 @@ class Game {
             }
             this.drawOfferedBy = null;
             console.log(`[${this.id}] ${this.getColor(socket)} plays ${result.from}-${result.to}${result.promotion ? "=" + result.promotion : ""}`);
-            // Update clocks
             const now = Date.now();
             if (this.hasStarted) {
-                const turn = this.board.turn() === "b" ? "white" : "black"; // after move, turn is the opponent
+                const turn = this.board.turn() === "b" ? "white" : "black";
                 const elapsed = now - this.lastMoveTime;
                 this.timeLeftMs[turn] -= elapsed;
                 this.timeLeftMs[turn] += this.incrementMs;

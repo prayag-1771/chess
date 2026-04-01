@@ -277,10 +277,6 @@ img, canvas { display: block; }
   line-height: 1.7;
 }
 
-/* ═══════════════════════════════════════════════
-   GAME PAGE — chess.com-inspired professional UI
-   ═══════════════════════════════════════════════ */
-
 .game-page {
   height: 100dvh;
   background: #272522;
@@ -300,7 +296,6 @@ img, canvas { display: block; }
   overflow: hidden;
 }
 
-/* ── Right Panel ── */
 .game-panel {
   display: flex;
   flex-direction: column;
@@ -334,7 +329,6 @@ img, canvas { display: block; }
   letter-spacing: -0.01em;
 }
 
-/* ── Tabs ── */
 .panel-tabs {
   display: flex;
   background: #302e2b;
@@ -389,7 +383,6 @@ img, canvas { display: block; }
   margin-left: 6px;
 }
 
-/* ── Status ── */
 .panel-status {
   display: flex;
   align-items: center;
@@ -425,7 +418,6 @@ img, canvas { display: block; }
   100%{ box-shadow: 0 0 0 0 rgba(201,168,76,0); }
 }
 
-/* ── Lobby ── */
 .panel-lobby {
   display: flex;
   flex-direction: column;
@@ -485,7 +477,6 @@ img, canvas { display: block; }
   background: #4a4745;
 }
 
-/* ── Player Cards ── */
 .player-card {
   display: flex;
   align-items: center;
@@ -544,7 +535,6 @@ img, canvas { display: block; }
   background: #81b64c;
 }
 
-/* ── Status Bar ── */
 .status-bar {
   padding: 8px 14px;
   border-radius: 4px;
@@ -563,7 +553,6 @@ img, canvas { display: block; }
   color: #989795;
 }
 
-/* ── Game Info Panel ── */
 .panel-game-info {
   display: flex;
   flex-direction: column;
@@ -587,7 +576,6 @@ img, canvas { display: block; }
   margin-top: 8px;
 }
 
-/* ── Move History ── */
 .move-history-panel {
   display: flex;
   flex-direction: column;
@@ -656,7 +644,6 @@ img, canvas { display: block; }
   padding: 1px 6px;
 }
 
-/* ── Game Actions ── */
 .game-actions {
   display: flex;
   gap: 1px;
@@ -692,7 +679,6 @@ img, canvas { display: block; }
   background: rgba(231,76,60,0.15);
 }
 
-/* ── Draw Offer ── */
 .draw-offer-bar {
   padding: 10px 14px;
   margin: 0 12px;
@@ -740,7 +726,6 @@ img, canvas { display: block; }
   background: #4a4745;
 }
 
-/* ── Replay ── */
 .replay-controls {
   display: flex;
   flex-direction: column;
@@ -769,7 +754,6 @@ img, canvas { display: block; }
   color: #fff;
 }
 
-/* ── Time Controls ── */
 .time-controls {
   display: flex;
   gap: 8px;
@@ -799,7 +783,6 @@ img, canvas { display: block; }
   color: #81b64c;
 }
 
-/* ── Room Controls ── */
 .room-controls {
   margin-top: 12px;
   display: flex;
@@ -900,7 +883,6 @@ img, canvas { display: block; }
   to { transform: rotate(360deg); }
 }
 
-/* ── Chat Panel ── */
 .chat-panel {
   display: flex;
   flex-direction: column;
@@ -1020,7 +1002,6 @@ img, canvas { display: block; }
   cursor: default;
 }
 
-/* ── Modals ── */
 .modal-overlay {
   position: absolute;
   top: 0;

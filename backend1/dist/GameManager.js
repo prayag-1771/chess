@@ -169,7 +169,6 @@ class GameManager {
             });
             return;
         }
-        // Default to 10+0 if not provided
         const payload = message?.payload || {};
         const timeControl = payload.timeControl || "10+0";
         if (!["3+2", "5+0", "10+0"].includes(timeControl)) {
